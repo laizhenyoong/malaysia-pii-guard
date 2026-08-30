@@ -27,7 +27,7 @@ def scores(recognizer, text):
     ],
 )
 def test_detects_issued_prefixes(recognizer, text):
-    """Still low -- an issued letter ranks a match, it does not verify it."""
+    """An issued letter ranks a match, it does not verify one."""
     assert scores(recognizer, text) == [pytest.approx(0.1)]
 
 

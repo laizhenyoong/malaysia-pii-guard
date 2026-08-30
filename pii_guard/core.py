@@ -1,4 +1,4 @@
-"""The recognizer types every detector in this package is built on."""
+"""Base types for every recognizer in this package."""
 
 import re
 from dataclasses import dataclass
@@ -16,7 +16,7 @@ class Pattern:
 
 @dataclass
 class Finding:
-    """One span of a text that a recognizer claims, and how sure it is."""
+    """One span a recognizer claims, and its confidence."""
 
     entity_type: str
     start: int
@@ -30,7 +30,7 @@ class Finding:
 
 
 def best_per_span(findings: List[Finding]) -> List[Finding]:
-    """Keep the strongest claim on each span, so two patterns cannot double up."""
+    """Keep the strongest claim on each span so patterns cannot double up."""
     best = {}
     for finding in findings:
         span = (finding.start, finding.end)
@@ -42,8 +42,8 @@ def best_per_span(findings: List[Finding]) -> List[Finding]:
 class Recognizer:
     """Base for anything that claims spans of a text.
 
-    CONTEXT holds the words that, sitting near a match, argue it is what it
-    looks like. The analyzer weighs them, not the recognizer.
+    CONTEXT holds words that, sitting near a match, argue it is what it looks
+    like. The analyzer weighs them, not the recognizer.
     """
 
     ENTITY: ClassVar[str] = ""
@@ -68,9 +68,8 @@ class PatternRecognizer(Recognizer):
     """A recognizer whose claims come from regular expressions.
 
     A pattern's score is what a bare match is worth before context is weighed,
-    so a shape that could be almost anything is scored near zero on purpose.
-    Where the digits carry checkable structure, invalidate_result throws out the
-    impossible ones.
+    so an ambiguous shape is scored near zero on purpose. Where the digits carry
+    checkable structure, invalidate_result throws out the impossible ones.
     """
 
     PATTERNS: ClassVar[Sequence[Pattern]] = ()

@@ -1,11 +1,11 @@
-"""Running the recognizers over a text, and settling what the overlaps mean."""
+"""Running recognizers over a text and settling the overlaps."""
 
 import re
 from typing import Iterable, List, Optional, Sequence
 
 from pii_guard.core import Finding, Recognizer
 
-# A shape scored near zero needs the floor as well as the boost -- adding 0.35
+# A shape scored near zero needs the floor as well as the boost. Adding 0.35
 # to 0.05 still leaves it in the noise.
 CONTEXT_BOOST = 0.35
 MIN_SCORE_WITH_CONTEXT = 0.4
@@ -26,7 +26,7 @@ def _weigh_context(text: str, finding: Finding, context: Sequence[str]) -> Findi
     """Lift the score when a context word sits near the span.
 
     A context word counts anywhere inside a nearby word, so "bank" is found in
-    "Maybank". Short words are the cost of that: "tel" is found in "hotel".
+    "Maybank". Short words are the cost: "tel" is found in "hotel".
     """
     if context and any(
         word in nearby for nearby in _nearby_words(text, finding) for word in context
@@ -56,8 +56,8 @@ def anonymize(text: str, findings: Iterable[Finding]) -> str:
 class Analyzer:
     """Runs every recognizer it holds over a text.
 
-    Overlapping claims are left in -- ten digits really is both a mobile number
-    and an account number. anonymize settles it by score.
+    Overlapping claims are left in. Ten digits really is both a mobile number
+    and an account number, and anonymize settles it by score.
     """
 
     def __init__(
@@ -72,11 +72,11 @@ class Analyzer:
         entities: Optional[Sequence[str]] = None,
         score_threshold: Optional[float] = None,
     ) -> List[Finding]:
-        """Every claim on the text scoring at or above the threshold, strongest first.
+        """Every claim at or above the threshold, strongest first.
 
-        The threshold defaults to zero, so a guardrail masks everything it has
-        any reason to suspect until someone decides otherwise. Raising it to
-        MIN_SCORE_WITH_CONTEXT keeps only what a context word vouched for.
+        The threshold defaults to zero, so everything suspect is masked until a
+        caller decides otherwise. At MIN_SCORE_WITH_CONTEXT only what a context
+        word vouched for survives.
         """
         if score_threshold is None:
             score_threshold = self.score_threshold

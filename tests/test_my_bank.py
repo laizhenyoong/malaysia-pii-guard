@@ -28,7 +28,7 @@ def scores(recognizer, text):
     ],
 )
 def test_detects_account_numbers(recognizer, text):
-    """The pattern is deliberately weak -- the context words do the rest."""
+    """The pattern is deliberately weak. The context words do the rest."""
     assert scores(recognizer, text) == [pytest.approx(0.05)]
 
 

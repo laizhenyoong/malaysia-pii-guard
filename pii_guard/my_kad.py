@@ -4,9 +4,8 @@ from datetime import date
 
 from pii_guard.core import Pattern, PatternRecognizer
 
-# Place-of-birth codes Jabatan Pendaftaran Negara has never issued. This set
-# does most of the false-positive filtering, so audit it against a current JPN
-# source before relying on it.
+# Place-of-birth codes JPN has never issued. This does most of the
+# false-positive filtering, so audit it against a current JPN source.
 NEVER_ISSUED_STATE_CODES = frozenset(
     {"00", "17", "18", "19", "20", "69", "70", "73", "80", "81", "94", "95", "96", "97"}
 )
@@ -27,9 +26,9 @@ def _is_real_date(yymmdd: str) -> bool:
 class MyKadRecognizer(PatternRecognizer):
     """Recognize the Malaysian MyKad / NRIC number.
 
-    The number has no check digit -- the trailing digit encodes gender -- so
-    precision comes from structure instead: the first six digits must be a real
-    date, and the place-of-birth code must be one JPN issues.
+    There is no check digit, since the trailing digit encodes gender. Precision
+    comes from structure instead: the first six digits must be a real date, and
+    the place-of-birth code must be one JPN issues.
     """
 
     ENTITY = "MY_NRIC"
@@ -37,7 +36,7 @@ class MyKadRecognizer(PatternRecognizer):
     COUNTRY_CODE = "my"
 
     # The lookarounds stop a match from being a slice of a longer run of digits
-    # and dashes, such as the leading digits of a reference number.
+    # and dashes, such as the start of a reference number.
     PATTERNS = [
         Pattern("MyKad (dashed)", r"(?<![\d-])\d{6}-\d{2}-\d{4}(?![\d-])", 0.6),
         Pattern("MyKad (spaced)", r"(?<![\d-])\d{6} \d{2} \d{4}(?![\d-])", 0.4),

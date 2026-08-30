@@ -39,7 +39,7 @@ def scores(recognizer, text):
     ],
 )
 def test_detects_malaysian_numbers(recognizer, text):
-    """Every match carries the same flat score -- the plan already vouched for it."""
+    """Every match carries the same flat score. The plan already vouched for it."""
     assert scores(recognizer, text) == [pytest.approx(MyPhoneRecognizer.SCORE)]
 
 
@@ -58,7 +58,7 @@ def test_detects_malaysian_numbers(recognizer, text):
     ],
 )
 def test_ignores_other_malaysian_identifiers(recognizer, text, reason):
-    """Leniency VALID is what buys this -- POSSIBLE matches several of these."""
+    """Leniency VALID buys this. POSSIBLE matches several of these."""
     assert scores(recognizer, text) == [], reason
 
 
