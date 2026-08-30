@@ -4,7 +4,7 @@ from presidio_analyzer.nlp_engine import NlpEngineProvider
 from presidio_analyzer.predefined_recognizers import PhoneRecognizer
 from presidio_anonymizer import AnonymizerEngine
 
-from pii_guard import MyKadRecognizer, MyPhoneRecognizer
+from pii_guard import MyPhoneRecognizer, malaysian_registry
 
 
 @pytest.fixture(scope="module")
@@ -14,22 +14,18 @@ def recognizer():
 
 @pytest.fixture(scope="module")
 def analyzer():
-    """A Malaysian deployment: the stock English recognizers, but MY phone numbers.
-
-    Presidio's own PhoneRecognizer is removed because it claims the same
-    PHONE_NUMBER entity from a non-Malaysian region list.
-    """
-    provider = NlpEngineProvider(
+    """A Malaysian deployment, put together the way malaysian_registry does it."""
+    nlp_engine = NlpEngineProvider(
         nlp_configuration={
             "nlp_engine_name": "spacy",
             "models": [{"lang_code": "en", "model_name": "en_core_web_sm"}],
         }
+    ).create_engine()
+    return AnalyzerEngine(
+        nlp_engine=nlp_engine,
+        registry=malaysian_registry(nlp_engine),
+        supported_languages=["en"],
     )
-    engine = AnalyzerEngine(nlp_engine=provider.create_engine(), supported_languages=["en"])
-    engine.registry.remove_recognizer("PhoneRecognizer")
-    engine.registry.add_recognizer(MyPhoneRecognizer())
-    engine.registry.add_recognizer(MyKadRecognizer())
-    return engine
 
 
 def scores(recognizer, text):
