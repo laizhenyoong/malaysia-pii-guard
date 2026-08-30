@@ -113,7 +113,7 @@ def test_context_word_raises_the_score(analyzer):
             if r.entity_type == "PHONE_NUMBER"
         )
 
-    assert score("My hp is 0123456789.") > score("Order 0123456789.")
+    assert score("My mobile is 0123456789.") > score("Order 0123456789.")
 
 
 def test_phone_and_mykad_do_not_steal_each_others_spans(analyzer):
