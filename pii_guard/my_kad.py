@@ -43,7 +43,6 @@ class MyKadRecognizer(PatternRecognizer):
         Pattern("MyKad (bare)", r"(?<![\d-])\d{12}(?![\d-])", 0.05),
     ]
 
-    # English only for now -- "kp" and "pengenalan" come back with Malay support.
     CONTEXT = ["ic", "nric", "mykad", "identity"]
 
     def __init__(

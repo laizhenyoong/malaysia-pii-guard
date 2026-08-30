@@ -41,8 +41,7 @@ def malaysian_registry(
         countries=[MyKadRecognizer.COUNTRY_CODE],
     )
 
-    # PhoneRecognizer declares no country of its own, so the filter keeps it,
-    # but its region list has no Malaysia in it.
+    # The country filter keeps PhoneRecognizer, which declares no country.
     registry.remove_recognizer("PhoneRecognizer")
     registry.add_recognizer(MyKadRecognizer())
     registry.add_recognizer(MyPhoneRecognizer())

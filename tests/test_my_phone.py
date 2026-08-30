@@ -35,25 +35,21 @@ def scores(recognizer, text):
 @pytest.mark.parametrize(
     "text",
     [
-        # International.
         "+60123456789",
         "+60 12-345 6789",
         "0060123456789",
         "60123456789",
-        # Mobile, national.
         "012-345 6789",
         "012-3456789",
         "0123456789",
         "011-1234 5678",
         "01112345678",
         "013-222 3333",
-        # Fixed line.
         "03-7712 3456",
         "03 2382 8888",
         "082-234567",
         "088-234567",
-        # Service numbers. Presidio makes no distinction, so these are PII too.
-        "1300-88-1234",
+        "1300-88-1234",  # service number, still PII
         "1800-88-1234",
     ],
 )
