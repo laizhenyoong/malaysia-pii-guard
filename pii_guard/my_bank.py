@@ -21,8 +21,7 @@ class MyBankRecognizer(PatternRecognizer):
         Pattern("Bank Account (weak)", r"\b[0-9]{10,16}\b", 0.05),
     ]
 
-    # Context matches as a substring, so "bank" already covers Maybank, AmBank
-    # and Bank Islam. Only the banks whose names do not contain it are listed.
+    # Only the banks whose names do not contain "bank" need listing.
     CONTEXT = [
         "account", "acct", "bank", "beneficiary", "deposit", "payee", "transfer",
         "cimb", "rhb", "ocbc", "uob", "hsbc", "bsn",

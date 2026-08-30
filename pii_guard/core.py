@@ -42,9 +42,8 @@ def best_per_span(findings: List[Finding]) -> List[Finding]:
 class Recognizer:
     """Base for anything that claims spans of a text.
 
-    A subclass names the entity it finds and implements analyze. CONTEXT holds
-    the words that, sitting near a match, argue it is what it looks like; the
-    analyzer weighs them, not the recognizer.
+    CONTEXT holds the words that, sitting near a match, argue it is what it
+    looks like. The analyzer weighs them, not the recognizer.
     """
 
     ENTITY: ClassVar[str] = ""
@@ -70,8 +69,8 @@ class PatternRecognizer(Recognizer):
 
     A pattern's score is what a bare match is worth before context is weighed,
     so a shape that could be almost anything is scored near zero on purpose.
-    Where the digits carry structure that can be checked -- a real date, a code
-    from a fixed set -- invalidate_result throws out the impossible ones.
+    Where the digits carry checkable structure, invalidate_result throws out the
+    impossible ones.
     """
 
     PATTERNS: ClassVar[Sequence[Pattern]] = ()

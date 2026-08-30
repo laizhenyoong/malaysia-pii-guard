@@ -5,20 +5,18 @@ from typing import Iterable, List, Optional, Sequence
 
 from pii_guard.core import Finding, Recognizer
 
-# What a nearby context word is worth, and the floor it lifts a match to. A
-# shape scored near zero needs the floor -- the boost alone leaves it in the
-# noise, and a bare account number is only ever an account number in context.
+# A shape scored near zero needs the floor as well as the boost -- adding 0.35
+# to 0.05 still leaves it in the noise.
 CONTEXT_BOOST = 0.35
 MIN_SCORE_WITH_CONTEXT = 0.4
 
-# How many words either side of a span are read as its context.
 CONTEXT_WINDOW = 5
 
 _WORD = re.compile(r"\w+")
 
 
 def _nearby_words(text: str, finding: Finding) -> List[str]:
-    """The words flanking the span, which is where a context word would sit."""
+    """The words flanking the span."""
     before = _WORD.findall(text[: finding.start])[-CONTEXT_WINDOW:]
     after = _WORD.findall(text[finding.end :])[:CONTEXT_WINDOW]
     return [word.lower() for word in before + after]
@@ -27,9 +25,8 @@ def _nearby_words(text: str, finding: Finding) -> List[str]:
 def _weigh_context(text: str, finding: Finding, context: Sequence[str]) -> Finding:
     """Lift the score when a context word sits near the span.
 
-    A context word counts when it appears anywhere inside a nearby word, so
-    "bank" is found in "Maybank" without listing every bank. Short words are the
-    cost of that: "tel" would be found in "hotel".
+    A context word counts anywhere inside a nearby word, so "bank" is found in
+    "Maybank". Short words are the cost of that: "tel" is found in "hotel".
     """
     if context and any(
         word in nearby for nearby in _nearby_words(text, finding) for word in context
@@ -60,8 +57,7 @@ class Analyzer:
     """Runs every recognizer it holds over a text.
 
     Overlapping claims are left in -- ten digits really is both a mobile number
-    and an account number, and which one wins is a question for whoever reads
-    the findings. anonymize settles it by score.
+    and an account number. anonymize settles it by score.
     """
 
     def __init__(self, recognizers: Iterable[Recognizer]):

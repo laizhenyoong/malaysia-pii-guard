@@ -24,8 +24,8 @@ class MyPhoneRecognizer(Recognizer):
 
     REGIONS = ("MY",)
 
-    # VALID means the number sits in a block the plan actually allocates.
-    # POSSIBLE only checks the length, and lets an IC number through.
+    # VALID means the plan actually allocates the block. POSSIBLE checks only
+    # the length, and lets an IC number through.
     LENIENCY = phonenumbers.Leniency.VALID
 
     CONTEXT = ["phone", "number", "telephone", "cell", "cellphone", "mobile", "call"]
