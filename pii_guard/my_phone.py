@@ -29,12 +29,7 @@ class MyPhoneRecognizer(LocalRecognizer):
 
     DEFAULT_SUPPORTED_REGIONS = ("MY",)
 
-    # Presidio's own context words plus their Malay equivalents. Context matches
-    # as a substring, so "tel" is left out -- it would fire on "hotel".
-    CONTEXT = [
-        "phone", "number", "telephone", "cell", "cellphone", "mobile", "call",
-        "telefon", "handphone", "hp", "nombor", "talian", "hubungi",
-    ]
+    CONTEXT = ["phone", "number", "telephone", "cell", "cellphone", "mobile", "call"]
 
     def __init__(
         self,
