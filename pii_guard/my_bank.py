@@ -1,18 +1,17 @@
 """Recognizer for the Malaysian bank account number."""
 
-from typing import List, Optional
-
-from presidio_analyzer import Pattern, PatternRecognizer
+from pii_guard.core import Pattern, PatternRecognizer
 
 
 class MyBankRecognizer(PatternRecognizer):
     """Recognize the Malaysian bank account number.
 
-    Malaysia never adopted IBAN and no regulator publishes a check digit, so
-    there is nothing to validate against -- the number is only a run of digits.
-    The pattern therefore scores near zero and the context words carry it, which
-    is how Presidio handles the US account number for the same reason.
+    No regulator publishes a check digit and there is no IBAN to fall back on,
+    so nothing about the number can be verified -- it is only a run of digits.
+    The pattern is therefore scored near zero and the context words carry it.
     """
+
+    ENTITY = "MY_BANK_ACCOUNT"
 
     COUNTRY_CODE = "my"
 
@@ -29,18 +28,3 @@ class MyBankRecognizer(PatternRecognizer):
         "cimb", "rhb", "ocbc", "uob", "hsbc", "bsn",
     ]
 
-    def __init__(
-        self,
-        patterns: Optional[List[Pattern]] = None,
-        context: Optional[List[str]] = None,
-        supported_language: str = "en",
-        supported_entity: str = "MY_BANK_ACCOUNT",
-        name: Optional[str] = None,
-    ):
-        super().__init__(
-            supported_entity=supported_entity,
-            patterns=patterns or self.PATTERNS,
-            context=context or self.CONTEXT,
-            supported_language=supported_language,
-            name=name,
-        )

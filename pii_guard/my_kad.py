@@ -1,9 +1,8 @@
 """Recognizer for the Malaysian MyKad / NRIC number (YYMMDD-PB-###G)."""
 
 from datetime import date
-from typing import List, Optional
 
-from presidio_analyzer import Pattern, PatternRecognizer
+from pii_guard.core import Pattern, PatternRecognizer
 
 # Place-of-birth codes Jabatan Pendaftaran Negara has never issued. This set
 # does most of the false-positive filtering, so audit it against a current JPN
@@ -33,6 +32,8 @@ class MyKadRecognizer(PatternRecognizer):
     date, and the place-of-birth code must be one JPN issues.
     """
 
+    ENTITY = "MY_NRIC"
+
     COUNTRY_CODE = "my"
 
     # The lookarounds stop a match from being a slice of a longer run of digits
@@ -44,22 +45,6 @@ class MyKadRecognizer(PatternRecognizer):
     ]
 
     CONTEXT = ["ic", "nric", "mykad", "identity"]
-
-    def __init__(
-        self,
-        patterns: Optional[List[Pattern]] = None,
-        context: Optional[List[str]] = None,
-        supported_language: str = "en",
-        supported_entity: str = "MY_NRIC",
-        name: Optional[str] = None,
-    ):
-        super().__init__(
-            supported_entity=supported_entity,
-            patterns=patterns or self.PATTERNS,
-            context=context or self.CONTEXT,
-            supported_language=supported_language,
-            name=name,
-        )
 
     def invalidate_result(self, pattern_text: str) -> bool:
         """Reject a match that cannot be an issued MyKad number."""

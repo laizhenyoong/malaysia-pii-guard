@@ -1,9 +1,6 @@
 import pytest
-from presidio_analyzer import AnalyzerEngine
-from presidio_analyzer.nlp_engine import NlpEngineProvider
-from presidio_anonymizer import AnonymizerEngine
 
-from pii_guard import MyKadRecognizer
+from pii_guard import MyKadRecognizer, anonymize, malaysian_analyzer
 
 
 @pytest.fixture(scope="module")
@@ -13,20 +10,11 @@ def recognizer():
 
 @pytest.fixture(scope="module")
 def analyzer():
-    """The default English recognizers plus MyKad."""
-    provider = NlpEngineProvider(
-        nlp_configuration={
-            "nlp_engine_name": "spacy",
-            "models": [{"lang_code": "en", "model_name": "en_core_web_sm"}],
-        }
-    )
-    engine = AnalyzerEngine(nlp_engine=provider.create_engine(), supported_languages=["en"])
-    engine.registry.add_recognizer(MyKadRecognizer())
-    return engine
+    return malaysian_analyzer()
 
 
 def scores(recognizer, text):
-    return [r.score for r in recognizer.analyze(text, ["MY_NRIC"], nlp_artifacts=None)]
+    return [finding.score for finding in recognizer.analyze(text)]
 
 
 @pytest.mark.parametrize(
@@ -64,8 +52,9 @@ def test_ignores_invalid_numbers(recognizer, text, reason):
 
 def test_context_word_raises_the_score(analyzer):
     def score(text):
-        return next(r.score for r in analyzer.analyze(text, language="en")
-                    if r.entity_type == "MY_NRIC")
+        return next(
+            f.score for f in analyzer.analyze(text) if f.entity_type == "MY_NRIC"
+        )
 
     assert score("His IC is 900101145671.") > score("Reference 900101145671.")
 
@@ -81,17 +70,14 @@ def test_context_word_raises_the_score(analyzer):
     ],
 )
 def test_no_digits_survive_anonymization(analyzer, text):
-    """Presidio alone redacted only the birth-date prefix, leaving the rest in the clear."""
-    results = analyzer.analyze(text=text, language="en")
-    redacted = AnonymizerEngine().anonymize(text=text, analyzer_results=results).text
+    redacted = anonymize(text, analyzer.analyze(text))
     assert "5678" not in redacted
     assert "5431" not in redacted
     assert "-14-" not in redacted
 
 
-def test_mykad_wins_the_span_over_date_time(analyzer):
-    """DATE_TIME used to claim the first six digits; MY_NRIC should own the whole span."""
+def test_the_whole_number_is_claimed_not_just_the_birth_date(analyzer):
     text = "My IC number is 990101-14-5678."
-    winner = next(r for r in analyzer.analyze(text, language="en") if "5678" in text[r.start:r.end])
+    winner = next(f for f in analyzer.analyze(text) if "5678" in text[f.start : f.end])
     assert winner.entity_type == "MY_NRIC"
-    assert text[winner.start:winner.end] == "990101-14-5678"
+    assert text[winner.start : winner.end] == "990101-14-5678"
