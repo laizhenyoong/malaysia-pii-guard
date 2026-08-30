@@ -6,9 +6,9 @@ from pii_guard.core import Pattern, PatternRecognizer
 class MyPassportRecognizer(PatternRecognizer):
     """Recognize the Malaysian passport number.
 
-    The number carries no check digit of its own -- the one printed on a
-    passport belongs to the machine-readable zone -- so the prefix and the digit
-    count are the whole of the structure.
+    Nothing in the number can be checked -- no published check digit, no date
+    to test -- so both patterns are scored low and the context words carry them.
+    The prefix decides only which of the two a match earns.
     """
 
     ENTITY = "MY_PASSPORT"
@@ -19,7 +19,7 @@ class MyPassportRecognizer(PatternRecognizer):
     # letter still matches the second pattern, so a series issued after this was
     # written is scored down rather than missed.
     PATTERNS = [
-        Pattern("Passport (issued prefix)", r"\b[AHKahk]\d{8}\b", 0.4),
+        Pattern("Passport (issued prefix)", r"\b[AHKahk]\d{8}\b", 0.1),
         Pattern("Passport (any prefix)", r"\b[A-Za-z]\d{8}\b", 0.05),
     ]
 

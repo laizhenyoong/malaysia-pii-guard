@@ -27,8 +27,8 @@ def scores(recognizer, text):
     ],
 )
 def test_detects_issued_prefixes(recognizer, text):
-    """An issued letter and eight digits is narrow enough to score on its own."""
-    assert scores(recognizer, text) == [pytest.approx(0.4)]
+    """Still low -- an issued letter ranks a match, it does not verify it."""
+    assert scores(recognizer, text) == [pytest.approx(0.1)]
 
 
 @pytest.mark.parametrize(
@@ -69,6 +69,10 @@ def test_context_word_raises_the_score(analyzer):
         )
 
     assert score("My passport is Z12345678.") > score("Ref Z12345678.")
+
+
+def test_an_issued_prefix_outranks_an_unlisted_one(recognizer):
+    assert scores(recognizer, "H12345678") > scores(recognizer, "Z12345678")
 
 
 def test_context_lifts_an_unlisted_prefix_to_the_floor(analyzer):

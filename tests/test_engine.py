@@ -1,7 +1,15 @@
 import pytest
 
-from pii_guard import Analyzer, Finding, Pattern, PatternRecognizer, anonymize, resolve
-from pii_guard.engine import CONTEXT_WINDOW
+from pii_guard import (
+    Analyzer,
+    Finding,
+    Pattern,
+    PatternRecognizer,
+    anonymize,
+    malaysian_analyzer,
+    resolve,
+)
+from pii_guard.engine import CONTEXT_WINDOW, MIN_SCORE_WITH_CONTEXT
 
 
 class Digits(PatternRecognizer):
@@ -111,3 +119,29 @@ def test_the_strongest_pattern_wins_a_span_it_shares():
 
     (finding,) = Analyzer([Twice()]).analyze("Order 1234")
     assert finding.score == pytest.approx(0.7)
+
+
+def test_score_threshold_drops_what_no_context_vouched_for():
+    analyzer = malaysian_analyzer()
+    text = "Build v20250101 shipped."
+    assert analyzer.analyze(text)
+    assert analyzer.analyze(text, score_threshold=MIN_SCORE_WITH_CONTEXT) == []
+
+
+def test_score_threshold_is_applied_after_context_is_weighed():
+    """A weak match a context word rescued has to survive the threshold."""
+    analyzer = malaysian_analyzer()
+    findings = analyzer.analyze(
+        "Her travel document is Z12345678.", score_threshold=MIN_SCORE_WITH_CONTEXT
+    )
+    assert [f.entity_type for f in findings] == ["MY_PASSPORT"]
+
+
+def test_threshold_set_on_the_analyzer_applies_to_every_call():
+    analyzer = malaysian_analyzer(score_threshold=MIN_SCORE_WITH_CONTEXT)
+    assert analyzer.analyze("Build v20250101 shipped.") == []
+
+
+def test_the_call_overrides_the_analyzers_threshold():
+    analyzer = malaysian_analyzer(score_threshold=MIN_SCORE_WITH_CONTEXT)
+    assert analyzer.analyze("Build v20250101 shipped.", score_threshold=0.0)

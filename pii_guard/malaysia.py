@@ -7,7 +7,7 @@ from pii_guard.my_passport import MyPassportRecognizer
 from pii_guard.my_phone import MyPhoneRecognizer
 
 
-def malaysian_analyzer() -> Analyzer:
+def malaysian_analyzer(score_threshold: float = 0.0) -> Analyzer:
     """An analyzer holding every recognizer in this package."""
     return Analyzer(
         [
@@ -15,5 +15,6 @@ def malaysian_analyzer() -> Analyzer:
             MyKadRecognizer(),
             MyPassportRecognizer(),
             MyPhoneRecognizer(),
-        ]
+        ],
+        score_threshold=score_threshold,
     )

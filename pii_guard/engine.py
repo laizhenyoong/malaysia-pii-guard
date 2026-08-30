@@ -60,17 +60,32 @@ class Analyzer:
     and an account number. anonymize settles it by score.
     """
 
-    def __init__(self, recognizers: Iterable[Recognizer]):
+    def __init__(
+        self, recognizers: Iterable[Recognizer], score_threshold: float = 0.0
+    ):
         self.recognizers = list(recognizers)
+        self.score_threshold = score_threshold
 
     def analyze(
-        self, text: str, entities: Optional[Sequence[str]] = None
+        self,
+        text: str,
+        entities: Optional[Sequence[str]] = None,
+        score_threshold: Optional[float] = None,
     ) -> List[Finding]:
-        """Every claim on the text, strongest first."""
+        """Every claim on the text scoring at or above the threshold, strongest first.
+
+        The threshold defaults to zero, so a guardrail masks everything it has
+        any reason to suspect until someone decides otherwise. Raising it to
+        MIN_SCORE_WITH_CONTEXT keeps only what a context word vouched for.
+        """
+        if score_threshold is None:
+            score_threshold = self.score_threshold
         findings = []
         for recognizer in self.recognizers:
             if entities and recognizer.entity not in entities:
                 continue
             for finding in recognizer.analyze(text):
-                findings.append(_weigh_context(text, finding, recognizer.context))
+                finding = _weigh_context(text, finding, recognizer.context)
+                if finding.score >= score_threshold:
+                    findings.append(finding)
         return sorted(findings, key=lambda finding: (-finding.score, finding.start))
