@@ -5,6 +5,7 @@ from typing import List, Optional
 from presidio_analyzer import RecognizerRegistry
 from presidio_analyzer.nlp_engine import NlpEngine
 
+from pii_guard.my_bank import MyBankRecognizer
 from pii_guard.my_kad import MyKadRecognizer
 from pii_guard.my_phone import MyPhoneRecognizer
 
@@ -43,6 +44,7 @@ def malaysian_registry(
 
     # The country filter keeps PhoneRecognizer, which declares no country.
     registry.remove_recognizer("PhoneRecognizer")
+    registry.add_recognizer(MyBankRecognizer())
     registry.add_recognizer(MyKadRecognizer())
     registry.add_recognizer(MyPhoneRecognizer())
 

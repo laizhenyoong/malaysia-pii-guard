@@ -61,14 +61,14 @@ def test_keeps_the_locale_agnostic_recognizers(nlp_engine):
 
 
 def test_adds_the_malaysian_recognizers(nlp_engine):
-    assert {"MyKadRecognizer", "MyPhoneRecognizer"} <= names(malaysian_registry(nlp_engine))
+    added = {"MyBankRecognizer", "MyKadRecognizer", "MyPhoneRecognizer"}
+    assert added <= names(malaysian_registry(nlp_engine))
 
 
 @pytest.mark.parametrize(
     "text, entity, matched",
     [
         ("My hp is 011-1234 5678.", "PHONE_NUMBER", "011-1234 5678"),
-        ("Subscriber 60123456789 has an issue.", "PHONE_NUMBER", "60123456789"),
         ("IC 850312-08-5431.", "MY_NRIC", "850312-08-5431"),
         ("Ahmad bin Abdullah called.", "PERSON", "Ahmad bin Abdullah"),
     ],
@@ -77,6 +77,16 @@ def test_entities_are_typed_and_spanned_correctly(analyzer, text, entity, matche
     """Stock Presidio called the first two DATE_TIME, one of them over-wide."""
     results = analyzer.analyze(text, language="en")
     assert [(r.entity_type, text[r.start : r.end]) for r in results] == [(entity, matched)]
+
+
+def test_phone_wins_when_a_number_is_both_shapes(analyzer):
+    """Eleven digits fits the account band too, so this asserts the mask, not the set."""
+    text = "Subscriber 60123456789 has an issue."
+    results = analyzer.analyze(text, language="en")
+    assert max(results, key=lambda r: r.score).entity_type == "PHONE_NUMBER"
+    assert AnonymizerEngine().anonymize(text, results).text == (
+        "Subscriber <PHONE_NUMBER> has an issue."
+    )
 
 
 def test_email_still_detected(analyzer):
