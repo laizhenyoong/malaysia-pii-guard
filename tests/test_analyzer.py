@@ -9,7 +9,7 @@ from pii_guard import (
     malaysian_analyzer,
     resolve,
 )
-from pii_guard.engine import CONTEXT_WINDOW, MIN_SCORE_WITH_CONTEXT
+from pii_guard.analyzer import CONTEXT_WINDOW, MIN_SCORE_WITH_CONTEXT
 
 
 class Digits(PatternRecognizer):

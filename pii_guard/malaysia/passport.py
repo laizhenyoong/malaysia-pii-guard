@@ -1,6 +1,6 @@
 """Recognizer for the Malaysian passport number (a letter, then eight digits)."""
 
-from pii_guard.core import Pattern, PatternRecognizer
+from pii_guard.recognizer import Pattern, PatternRecognizer
 
 
 class MyPassportRecognizer(PatternRecognizer):

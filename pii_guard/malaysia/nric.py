@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from pii_guard.core import Pattern, PatternRecognizer
+from pii_guard.recognizer import Pattern, PatternRecognizer
 
 # Place-of-birth codes JPN has never issued. This does most of the
 # false-positive filtering, so audit it against a current JPN source.

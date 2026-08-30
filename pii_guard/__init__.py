@@ -1,10 +1,10 @@
-from pii_guard.core import Finding, Pattern, PatternRecognizer, Recognizer
-from pii_guard.engine import Analyzer, anonymize, resolve
+from pii_guard.analyzer import Analyzer, anonymize, resolve
 from pii_guard.malaysia import malaysian_analyzer
-from pii_guard.my_bank import MyBankRecognizer
-from pii_guard.my_kad import MyKadRecognizer
-from pii_guard.my_passport import MyPassportRecognizer
-from pii_guard.my_phone import MyPhoneRecognizer
+from pii_guard.malaysia.bank_account import MyBankRecognizer
+from pii_guard.malaysia.nric import MyKadRecognizer
+from pii_guard.malaysia.passport import MyPassportRecognizer
+from pii_guard.malaysia.phone import MyPhoneRecognizer
+from pii_guard.recognizer import Finding, Pattern, PatternRecognizer, Recognizer
 
 __all__ = [
     "Analyzer",

@@ -3,7 +3,7 @@
 import re
 from typing import Iterable, List, Optional, Sequence
 
-from pii_guard.core import Finding, Recognizer
+from pii_guard.recognizer import Finding, Recognizer
 
 # A shape scored near zero needs the floor as well as the boost. Adding 0.35
 # to 0.05 still leaves it in the noise.

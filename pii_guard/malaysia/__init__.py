@@ -1,10 +1,10 @@
 """The set of recognizers a Malaysian deployment runs."""
 
-from pii_guard.engine import Analyzer
-from pii_guard.my_bank import MyBankRecognizer
-from pii_guard.my_kad import MyKadRecognizer
-from pii_guard.my_passport import MyPassportRecognizer
-from pii_guard.my_phone import MyPhoneRecognizer
+from pii_guard.analyzer import Analyzer
+from pii_guard.malaysia.bank_account import MyBankRecognizer
+from pii_guard.malaysia.nric import MyKadRecognizer
+from pii_guard.malaysia.passport import MyPassportRecognizer
+from pii_guard.malaysia.phone import MyPhoneRecognizer
 
 
 def malaysian_analyzer(score_threshold: float = 0.0) -> Analyzer:
