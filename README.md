@@ -9,15 +9,23 @@ email addresses.
 ## Quick start
 
 ```bash
-pip install malaysia-pii-guard
-python -m malaysia_pii_guard
+uvx malaysia-pii-guard
 ```
 
-Opens a page on http://127.0.0.1:8765 that masks as you type.
+Opens a page on http://127.0.0.1:8765 that masks as you type. [uv](https://docs.astral.sh/uv/)
+runs it in a throwaway environment, so nothing is installed into your system Python.
 
 [![MyKad, phone, passport, bank account numbers, and emails being masked as they are typed](assets/demo.gif)](assets/demo.gif)
 
 ## Usage
+
+Add it to your project. `uv` keeps it in the project's `.venv`, never global:
+
+```bash
+uv add malaysia-pii-guard
+```
+
+Then, in a script you run with `uv run`:
 
 ```python
 from malaysia_pii_guard import AnalyzerEngine, AnonymizerEngine, DeanonymizeEngine
@@ -35,6 +43,8 @@ print(result.text)
 print(deanonymizer.deanonymize(result.text, result.items))
 # IC 880101-14-5523, mobile 012-345 6789, email siti@example.com.my
 ```
+
+Not using uv? `pip install malaysia-pii-guard` works the same, inside a virtualenv.
 
 ## License
 
