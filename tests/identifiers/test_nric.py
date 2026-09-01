@@ -70,7 +70,7 @@ def test_context_word_raises_the_score(analyzer):
     ],
 )
 def test_no_digits_survive_anonymization(analyzer, text):
-    redacted = anonymize(text, analyzer.analyze(text))
+    redacted = anonymize(text, analyzer.analyze(text)).text
     assert "5678" not in redacted
     assert "5431" not in redacted
     assert "-14-" not in redacted

@@ -102,4 +102,6 @@ def test_passport_and_mykad_do_not_steal_each_others_spans(analyzer):
 
 def test_masks_under_the_right_label(analyzer):
     text = "My passport is A12345678."
-    assert anonymize(text, analyzer.analyze(text)) == "My passport is <MY_PASSPORT>."
+    assert anonymize(text, analyzer.analyze(text)).text == (
+        "My passport is <MY_PASSPORT_0>."
+    )

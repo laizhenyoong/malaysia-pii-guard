@@ -106,4 +106,4 @@ def test_phone_and_mykad_do_not_steal_each_others_spans(analyzer):
     ],
 )
 def test_no_digits_survive_anonymization(analyzer, text, digits):
-    assert digits not in anonymize(text, analyzer.analyze(text))
+    assert digits not in anonymize(text, analyzer.analyze(text)).text

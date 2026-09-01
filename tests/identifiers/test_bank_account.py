@@ -76,9 +76,11 @@ def test_a_mobile_number_outscores_the_account_reading(analyzer):
     text = "My mobile is 0123456789."
     findings = analyzer.analyze(text)
     assert max(findings, key=lambda f: f.score).entity_type == "PHONE_NUMBER"
-    assert anonymize(text, findings) == "My mobile is <PHONE_NUMBER>."
+    assert anonymize(text, findings).text == "My mobile is <PHONE_NUMBER_0>."
 
 
 def test_masks_under_the_right_label(analyzer):
     text = "My account is 512345678901."
-    assert anonymize(text, analyzer.analyze(text)) == "My account is <MY_BANK_ACCOUNT>."
+    assert anonymize(text, analyzer.analyze(text)).text == (
+        "My account is <MY_BANK_ACCOUNT_0>."
+    )

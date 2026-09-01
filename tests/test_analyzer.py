@@ -7,6 +7,7 @@ from pii_guard import (
     PatternRecognizer,
     anonymize,
     malaysian_analyzer,
+    rehydrate,
     resolve,
 )
 from pii_guard.analyzer import CONTEXT_WINDOW, MIN_SCORE_WITH_CONTEXT
@@ -90,13 +91,64 @@ def test_touching_spans_do_not_count_as_overlapping():
 
 def test_anonymize_replaces_every_span_from_the_right():
     text = "Order 1234 then 5678."
-    assert anonymize(text, Analyzer([Digits()]).analyze(text)) == (
-        "Order <DIGITS> then <DIGITS>."
+    assert anonymize(text, Analyzer([Digits()]).analyze(text)).text == (
+        "Order <DIGITS_0> then <DIGITS_1>."
     )
 
 
 def test_anonymize_leaves_a_text_with_no_findings_alone():
-    assert anonymize("Nothing here.", []) == "Nothing here."
+    result = anonymize("Nothing here.", [])
+    assert result.text == "Nothing here."
+    assert result.replacements == []
+
+
+def test_a_repeated_value_earns_one_label():
+    text = "Order 1234, again 1234."
+    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    assert result.text == "Order <DIGITS_0>, again <DIGITS_0>."
+    assert [r.original for r in result.replacements] == ["1234"]
+
+
+def test_a_replacement_carries_the_value_it_stands_for():
+    text = "Order 1234 then 5678."
+    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    assert [(r.entity_type, r.label, r.original) for r in result.replacements] == [
+        ("DIGITS", "<DIGITS_0>", "1234"),
+        ("DIGITS", "<DIGITS_1>", "5678"),
+    ]
+
+
+def test_an_anonymized_result_reads_as_its_masked_text():
+    text = "Order 1234."
+    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    assert str(result) == "Order <DIGITS_0>."
+
+
+def test_rehydrate_undoes_anonymize():
+    text = "Order 1234 then 5678."
+    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    assert rehydrate(result.text, result.replacements) == text
+
+
+def test_rehydrate_restores_a_text_the_masking_never_saw():
+    """This is the point of it: an answer written about the masked text."""
+    text = "Order 1234 then 5678."
+    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    assert rehydrate("<DIGITS_1> shipped before <DIGITS_0>.", result.replacements) == (
+        "5678 shipped before 1234."
+    )
+
+
+def test_rehydrate_leaves_a_label_the_text_never_mentions():
+    text = "Order 1234 then 5678."
+    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    assert rehydrate("Only <DIGITS_0>.", result.replacements) == "Only 1234."
+
+
+def test_rehydrate_tells_the_tenth_label_from_the_first():
+    text = " ".join(str(1000 + n) for n in range(11))
+    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    assert rehydrate(result.text, result.replacements) == text
 
 
 def test_a_pattern_can_throw_its_own_match_out():
