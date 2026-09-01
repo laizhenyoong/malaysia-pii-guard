@@ -1,6 +1,6 @@
 import pytest
 
-from malaysia_pii_guard import AnalyzerEngine, MyPhoneRecognizer, anonymize
+from malaysia_pii_guard import AnalyzerEngine, MyPhoneRecognizer
 
 
 @pytest.fixture(scope="module")
@@ -105,5 +105,5 @@ def test_phone_and_mykad_do_not_steal_each_others_spans(analyzer):
         ("Contact 011-1234 5678 or the office at 03-7712 3456.", "5678"),
     ],
 )
-def test_no_digits_survive_anonymization(analyzer, text, digits):
-    assert digits not in anonymize(text, analyzer.analyze(text)).text
+def test_no_digits_survive_anonymization(analyzer, anonymizer, text, digits):
+    assert digits not in anonymizer.anonymize(text, analyzer.analyze(text)).text

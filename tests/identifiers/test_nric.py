@@ -1,6 +1,6 @@
 import pytest
 
-from malaysia_pii_guard import AnalyzerEngine, MyKadRecognizer, anonymize
+from malaysia_pii_guard import AnalyzerEngine, MyKadRecognizer
 
 
 @pytest.fixture(scope="module")
@@ -69,8 +69,8 @@ def test_context_word_raises_the_score(analyzer):
         "Applicant IC: 850312-08-5431. Bank: Maybank 514288123456.",
     ],
 )
-def test_no_digits_survive_anonymization(analyzer, text):
-    redacted = anonymize(text, analyzer.analyze(text)).text
+def test_no_digits_survive_anonymization(analyzer, anonymizer, text):
+    redacted = anonymizer.anonymize(text, analyzer.analyze(text)).text
     assert "5678" not in redacted
     assert "5431" not in redacted
     assert "-14-" not in redacted

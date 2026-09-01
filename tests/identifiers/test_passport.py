@@ -1,6 +1,6 @@
 import pytest
 
-from malaysia_pii_guard import AnalyzerEngine, MyPassportRecognizer, anonymize
+from malaysia_pii_guard import AnalyzerEngine, MyPassportRecognizer
 
 
 @pytest.fixture(scope="module")
@@ -100,8 +100,8 @@ def test_passport_and_mykad_do_not_steal_each_others_spans(analyzer):
     assert found == {"MY_NRIC": "850312-08-5431", "MY_PASSPORT": "A12345678"}
 
 
-def test_masks_under_the_right_label(analyzer):
+def test_masks_under_the_right_label(analyzer, anonymizer):
     text = "My passport is A12345678."
-    assert anonymize(text, analyzer.analyze(text)).text == (
-        "My passport is <MY_PASSPORT_0>."
-    )
+    result = anonymizer.anonymize(text, analyzer.analyze(text))
+    assert [item.entity_type for item in result.items] == ["MY_PASSPORT"]
+    assert "A12345678" not in result.text

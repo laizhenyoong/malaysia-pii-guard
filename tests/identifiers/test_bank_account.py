@@ -1,6 +1,6 @@
 import pytest
 
-from malaysia_pii_guard import AnalyzerEngine, MyBankRecognizer, anonymize
+from malaysia_pii_guard import AnalyzerEngine, MyBankRecognizer
 
 
 @pytest.fixture(scope="module")
@@ -71,16 +71,16 @@ def test_account_and_mykad_do_not_steal_each_others_spans(analyzer):
     assert found == {"MY_NRIC": "850312-08-5431", "MY_BANK_ACCOUNT": "512345678901"}
 
 
-def test_a_mobile_number_outscores_the_account_reading(analyzer):
+def test_a_mobile_number_outscores_the_account_reading(analyzer, anonymizer):
     """Ten digits is both shapes, so the score has to settle it."""
     text = "My mobile is 0123456789."
     findings = analyzer.analyze(text)
     assert max(findings, key=lambda f: f.score).entity_type == "PHONE_NUMBER"
-    assert anonymize(text, findings).text == "My mobile is <PHONE_NUMBER_0>."
+    assert anonymizer.anonymize(text, findings).items[0].entity_type == "PHONE_NUMBER"
 
 
-def test_masks_under_the_right_label(analyzer):
+def test_masks_under_the_right_label(analyzer, anonymizer):
     text = "My account is 512345678901."
-    assert anonymize(text, analyzer.analyze(text)).text == (
-        "My account is <MY_BANK_ACCOUNT_0>."
-    )
+    result = anonymizer.anonymize(text, analyzer.analyze(text))
+    assert [item.entity_type for item in result.items] == ["MY_BANK_ACCOUNT"]
+    assert "512345678901" not in result.text

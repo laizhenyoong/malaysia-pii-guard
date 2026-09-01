@@ -1,10 +1,21 @@
-"""Settling the overlaps, masking a text, and putting the originals back."""
+"""Settling the overlaps, masking a text, and putting the originals back.
 
-from collections import defaultdict
+Masking encrypts each span in place, so a masked text carries no plaintext and
+only the key reverses it. The price is that deanonymize reads by offset: it
+undoes the text anonymize returned, not one that was rewritten in between.
+"""
+
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Tuple
+from typing import Iterable, List
+
+from cryptography.fernet import Fernet
 
 from malaysia_pii_guard.recognizer import Finding
+
+
+def generate_key() -> bytes:
+    """A fresh key for an AnonymizerEngine and the DeanonymizeEngine undoing it."""
+    return Fernet.generate_key()
 
 
 def resolve(findings: Iterable[Finding]) -> List[Finding]:
@@ -17,62 +28,72 @@ def resolve(findings: Iterable[Finding]) -> List[Finding]:
 
 
 @dataclass(frozen=True)
-class Replacement:
-    """A label and the value it stands for."""
+class Item:
+    """Where one masked value sits in the anonymized text."""
 
     entity_type: str
-    label: str
-    original: str
+    start: int
+    end: int
 
 
 @dataclass
 class Anonymized:
-    """A masked text and the replacements that undo it."""
+    """A masked text and the items a DeanonymizeEngine needs to undo it."""
 
     text: str
-    replacements: List[Replacement]
+    items: List[Item]
 
     def __str__(self) -> str:
         """The masked text, so printing a result cannot spill the originals."""
         return self.text
 
 
-def anonymize(text: str, findings: Iterable[Finding]) -> Anonymized:
-    """Replace every surviving span with a numbered label.
+class AnonymizerEngine:
+    """Replaces every span a finding claims with its ciphertext."""
 
-    Each distinct value earns one label, which is what lets rehydrate undo the
-    masking wherever that label later turns up.
-    """
-    spans = [
-        (finding, text[finding.start : finding.end]) for finding in resolve(findings)
-    ]
+    def __init__(self, key: bytes):
+        self._cipher = Fernet(key)
 
-    # Number left to right, so the labels read in the order they appear.
-    labels: Dict[Tuple[str, str], str] = {}
-    counts: Dict[str, int] = defaultdict(int)
-    replacements: List[Replacement] = []
-    for finding, original in spans:
-        entity = finding.entity_type
-        if (entity, original) not in labels:
-            label = f"<{entity}_{counts[entity]}>"
-            counts[entity] += 1
-            labels[(entity, original)] = label
-            replacements.append(Replacement(entity, label, original))
+    def anonymize(self, text: str, findings: Iterable[Finding]) -> Anonymized:
+        """Encrypt every span that survives the overlap check.
 
-    # Splice right to left, so a replacement cannot move the spans before it.
-    masked = text
-    for finding, original in reversed(spans):
-        label = labels[(finding.entity_type, original)]
-        masked = f"{masked[: finding.start]}{label}{masked[finding.end :]}"
-    return Anonymized(masked, replacements)
+        Built left to right, tracking where each token lands in the text being
+        written, because that is the offset deanonymize will read back.
+        """
+        parts: List[str] = []
+        items: List[Item] = []
+        read = 0
+        written = 0
+        for finding in resolve(findings):
+            head = text[read : finding.start]
+            token = self._cipher.encrypt(
+                text[finding.start : finding.end].encode()
+            ).decode()
+            parts += [head, token]
+            written += len(head)
+            items.append(Item(finding.entity_type, written, written + len(token)))
+            written += len(token)
+            read = finding.end
+        parts.append(text[read:])
+        return Anonymized("".join(parts), items)
 
 
-def rehydrate(text: str, replacements: Iterable[Replacement]) -> str:
-    """Put the original values back wherever their labels appear.
+class DeanonymizeEngine:
+    """Puts the originals back by decrypting what anonymize left in the text."""
 
-    Any text carrying the labels works, not only the one anonymize returned, so
-    an answer written about a masked text rehydrates too.
-    """
-    for replacement in replacements:
-        text = text.replace(replacement.label, replacement.original)
-    return text
+    def __init__(self, key: bytes):
+        self._cipher = Fernet(key)
+
+    def deanonymize(self, text: str, items: Iterable[Item]) -> str:
+        """Decrypt every item back into place.
+
+        The items carry offsets into the text anonymize returned, so a text
+        edited in between no longer lines up and the decryption fails.
+        """
+        # Splice right to left, so a replacement cannot move the spans before it.
+        for item in sorted(items, key=lambda item: item.start, reverse=True):
+            original = self._cipher.decrypt(
+                text[item.start : item.end].encode()
+            ).decode()
+            text = f"{text[: item.start]}{original}{text[item.end :]}"
+        return text

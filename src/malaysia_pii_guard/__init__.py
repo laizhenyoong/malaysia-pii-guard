@@ -1,9 +1,10 @@
 from malaysia_pii_guard.analyzer import AnalyzerEngine
 from malaysia_pii_guard.anonymizer import (
     Anonymized,
-    Replacement,
-    anonymize,
-    rehydrate,
+    AnonymizerEngine,
+    DeanonymizeEngine,
+    Item,
+    generate_key,
     resolve,
 )
 from malaysia_pii_guard.identifiers.bank_account import MyBankRecognizer
@@ -15,7 +16,10 @@ from malaysia_pii_guard.recognizer import Finding, Pattern, PatternRecognizer, R
 __all__ = [
     "AnalyzerEngine",
     "Anonymized",
+    "AnonymizerEngine",
+    "DeanonymizeEngine",
     "Finding",
+    "Item",
     "MyBankRecognizer",
     "MyKadRecognizer",
     "MyPassportRecognizer",
@@ -23,8 +27,6 @@ __all__ = [
     "Pattern",
     "PatternRecognizer",
     "Recognizer",
-    "Replacement",
-    "anonymize",
-    "rehydrate",
+    "generate_key",
     "resolve",
 ]

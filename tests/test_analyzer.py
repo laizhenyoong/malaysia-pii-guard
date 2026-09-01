@@ -1,12 +1,14 @@
 import pytest
 
+from cryptography.fernet import InvalidToken
+
 from malaysia_pii_guard import (
     AnalyzerEngine,
+    DeanonymizeEngine,
     Finding,
     Pattern,
     PatternRecognizer,
-    anonymize,
-    rehydrate,
+    generate_key,
     resolve,
 )
 from malaysia_pii_guard.analyzer import CONTEXT_WINDOW, MIN_SCORE_WITH_CONTEXT
@@ -88,66 +90,69 @@ def test_touching_spans_do_not_count_as_overlapping():
     assert len(resolve([left, right])) == 2
 
 
-def test_anonymize_replaces_every_span_from_the_right():
+def test_anonymize_encrypts_every_span(anonymizer):
     text = "Order 1234 then 5678."
-    assert anonymize(text, AnalyzerEngine([Digits()]).analyze(text)).text == (
-        "Order <DIGITS_0> then <DIGITS_1>."
-    )
+    result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert "1234" not in result.text
+    assert "5678" not in result.text
+    assert [item.entity_type for item in result.items] == ["DIGITS", "DIGITS"]
 
 
-def test_anonymize_leaves_a_text_with_no_findings_alone():
-    result = anonymize("Nothing here.", [])
+def test_anonymize_leaves_a_text_with_no_findings_alone(anonymizer):
+    result = anonymizer.anonymize("Nothing here.", [])
     assert result.text == "Nothing here."
-    assert result.replacements == []
+    assert result.items == []
 
 
-def test_a_repeated_value_earns_one_label():
+def test_an_item_marks_where_its_ciphertext_landed(anonymizer):
+    text = "Order 1234 then 5678."
+    result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    first, second = result.items
+    assert result.text[: first.start] == "Order "
+    assert result.text[first.end : second.start] == " then "
+    assert result.text[second.end :] == "."
+
+
+def test_a_repeated_value_earns_a_fresh_ciphertext(anonymizer):
+    """Encryption is randomized, so a repeat no longer collapses into one token."""
     text = "Order 1234, again 1234."
-    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
-    assert result.text == "Order <DIGITS_0>, again <DIGITS_0>."
-    assert [r.original for r in result.replacements] == ["1234"]
+    result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    first, second = result.items
+    assert result.text[first.start : first.end] != result.text[second.start : second.end]
 
 
-def test_a_replacement_carries_the_value_it_stands_for():
-    text = "Order 1234 then 5678."
-    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
-    assert [(r.entity_type, r.label, r.original) for r in result.replacements] == [
-        ("DIGITS", "<DIGITS_0>", "1234"),
-        ("DIGITS", "<DIGITS_1>", "5678"),
-    ]
-
-
-def test_an_anonymized_result_reads_as_its_masked_text():
+def test_an_anonymized_result_reads_as_its_masked_text(anonymizer):
     text = "Order 1234."
-    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
-    assert str(result) == "Order <DIGITS_0>."
+    result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert str(result) == result.text
+    assert "1234" not in str(result)
 
 
-def test_rehydrate_undoes_anonymize():
+def test_deanonymize_undoes_anonymize(anonymizer, deanonymizer):
     text = "Order 1234 then 5678."
-    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
-    assert rehydrate(result.text, result.replacements) == text
+    result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert deanonymizer.deanonymize(result.text, result.items) == text
 
 
-def test_rehydrate_restores_a_text_the_masking_never_saw():
-    """This is the point of it: an answer written about the masked text."""
-    text = "Order 1234 then 5678."
-    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
-    assert rehydrate("<DIGITS_1> shipped before <DIGITS_0>.", result.replacements) == (
-        "5678 shipped before 1234."
-    )
-
-
-def test_rehydrate_leaves_a_label_the_text_never_mentions():
-    text = "Order 1234 then 5678."
-    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
-    assert rehydrate("Only <DIGITS_0>.", result.replacements) == "Only 1234."
-
-
-def test_rehydrate_tells_the_tenth_label_from_the_first():
+def test_deanonymize_undoes_every_span_of_a_long_text(anonymizer, deanonymizer):
     text = " ".join(str(1000 + n) for n in range(11))
-    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
-    assert rehydrate(result.text, result.replacements) == text
+    result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert deanonymizer.deanonymize(result.text, result.items) == text
+
+
+def test_deanonymize_needs_the_very_text_anonymize_returned(anonymizer, deanonymizer):
+    """The items are offsets into that text, so an edit in between breaks the undo."""
+    text = "Order 1234 then 5678."
+    result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    with pytest.raises(InvalidToken):
+        deanonymizer.deanonymize("Summary: " + result.text, result.items)
+
+
+def test_another_key_cannot_undo_the_masking(anonymizer):
+    text = "Order 1234."
+    result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    with pytest.raises(InvalidToken):
+        DeanonymizeEngine(generate_key()).deanonymize(result.text, result.items)
 
 
 def test_a_pattern_can_throw_its_own_match_out():
