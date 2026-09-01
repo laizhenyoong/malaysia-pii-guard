@@ -30,27 +30,12 @@ print(DeanonymizeEngine(key).deanonymize(result.text, result.items))
 # IC 880101-14-5523, mobile 012-345 6789
 ```
 
-Any secret of 16 bytes or more works as a key, so it can come straight from the
-environment, a vault, or a KMS. `generate_key()` makes a strong one for callers
-who have none.
+The key is any secret of 16 bytes or more, so it can come from the environment,
+a vault, or a KMS. `generate_key()` makes one if you have none.
 
-## Flow
-
-```mermaid
-flowchart LR
-    A[Input text] --> B[Detect PII]
-    B --> C[Encrypt PII in place]
-    C --> D[Store or ship the masked text]
-    D --> E[Decrypt with the key]
-```
-
-The masked text carries no plaintext, so it is safe to keep or send on its own,
-and `result.items` holds offsets rather than values. The key is the whole secret:
-without it nothing is reversible, and with it anyone can reverse it.
-
-> Deanonymizing reads by offset, so it undoes only the exact text `anonymize`
-> returned. A masked text that was edited or rewritten in between cannot be
-> restored.
+Masking encrypts each value in place, so the masked text holds no plaintext and
+only the key undoes it. `result.items` holds offsets into that text, so restore
+the text `anonymize` returned rather than one that was edited in between.
 
 ## License
 
