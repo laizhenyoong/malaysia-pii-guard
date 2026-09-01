@@ -1,14 +1,15 @@
 """Settling the overlaps, masking a text, and putting the originals back.
 
-Masking encrypts each span in place, so a masked text carries no plaintext and
-only the key reverses it. The price is that deanonymize reads by offset: it
-undoes the text anonymize returned, not one that was rewritten in between.
+Masking without a key writes a numbered label, so the masked text stays readable
+and a text written about it restores too. Masking with a key encrypts each value
+instead, so the masked text carries no plaintext and only the key undoes it.
 """
 
 import secrets
 from base64 import urlsafe_b64encode
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Iterable, List, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
@@ -55,11 +56,17 @@ def resolve(findings: Iterable[Finding]) -> List[Finding]:
 
 @dataclass(frozen=True)
 class Item:
-    """Where one masked value sits in the anonymized text."""
+    """Where one masked value sits in the anonymized text, and what it stands for.
+
+    original is filled by keyless masking only. Encrypting keeps no plaintext,
+    which is the point of it.
+    """
 
     entity_type: str
     start: int
     end: int
+    label: str
+    original: Optional[str] = None
 
 
 @dataclass
@@ -75,29 +82,44 @@ class Anonymized:
 
 
 class AnonymizerEngine:
-    """Replaces every span a finding claims with its ciphertext."""
+    """Replaces every span a finding claims.
 
-    def __init__(self, key: Union[bytes, str]):
-        self._fernet = _cipher(key)
+    Built without a key it writes numbered labels and keeps the originals on the
+    items. Built with one it encrypts instead and keeps none.
+    """
+
+    def __init__(self, key: Optional[Union[bytes, str]] = None):
+        self._fernet = _cipher(key) if key is not None else None
 
     def anonymize(self, text: str, findings: Iterable[Finding]) -> Anonymized:
-        """Encrypt every span that survives the overlap check.
+        """Mask every span that survives the overlap check.
 
         Built left to right, tracking where each token lands in the text being
-        written, because that is the offset deanonymize will read back.
+        written, because that is the offset a keyed undo reads back.
         """
         parts: List[str] = []
         items: List[Item] = []
+        labels: Dict[Tuple[str, str], str] = {}
+        counts: Dict[str, int] = defaultdict(int)
         read = 0
         written = 0
         for finding in resolve(findings):
+            entity = finding.entity_type
+            original = text[finding.start : finding.end]
             head = text[read : finding.start]
-            token = self._fernet.encrypt(
-                text[finding.start : finding.end].encode()
-            ).decode()
+
+            if self._fernet is not None:
+                token, kept = self._fernet.encrypt(original.encode()).decode(), None
+            else:
+                # Each distinct value earns one label, so a repeat reads alike.
+                if (entity, original) not in labels:
+                    labels[(entity, original)] = f"<{entity}_{counts[entity]}>"
+                    counts[entity] += 1
+                token, kept = labels[(entity, original)], original
+
             parts += [head, token]
             written += len(head)
-            items.append(Item(finding.entity_type, written, written + len(token)))
+            items.append(Item(entity, written, written + len(token), token, kept))
             written += len(token)
             read = finding.end
         parts.append(text[read:])
@@ -105,17 +127,23 @@ class AnonymizerEngine:
 
 
 class DeanonymizeEngine:
-    """Puts the originals back by decrypting what anonymize left in the text."""
+    """Puts the originals back, however the AnonymizerEngine put them away.
 
-    def __init__(self, key: Union[bytes, str]):
-        self._fernet = _cipher(key)
+    Built without a key it swaps each label for what it stood for wherever the
+    label turns up, so a text written about the masked one restores too. Built
+    with one it decrypts by offset, which needs the very text anonymize returned.
+    """
+
+    def __init__(self, key: Optional[Union[bytes, str]] = None):
+        self._fernet = _cipher(key) if key is not None else None
 
     def deanonymize(self, text: str, items: Iterable[Item]) -> str:
-        """Decrypt every item back into place.
+        """Undo the masking every item records."""
+        if self._fernet is None:
+            for item in items:
+                text = text.replace(item.label, item.original)
+            return text
 
-        The items carry offsets into the text anonymize returned, so a text
-        edited in between no longer lines up and the decryption fails.
-        """
         # Splice right to left, so a replacement cannot move the spans before it.
         for item in sorted(items, key=lambda item: item.start, reverse=True):
             original = self._fernet.decrypt(

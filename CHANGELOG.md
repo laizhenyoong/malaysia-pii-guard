@@ -2,11 +2,12 @@
 
 ## Unreleased
 
-- **Breaking.** Masking is reversible by encryption now, following Presidio.
-  `AnonymizerEngine(key).anonymize` and `DeanonymizeEngine(key).deanonymize`
-  replace the `anonymize` and `rehydrate` functions, and `Item` offsets replace
-  `Replacement` labels. A masked text can no longer be rewritten before it is
-  restored, and masked values no longer read as `<MY_NRIC_0>`.
+- **Breaking.** `AnonymizerEngine` and `DeanonymizeEngine` replace the
+  `anonymize` and `rehydrate` functions, and `Item` replaces `Replacement`.
+- Masking takes a key now. Without one it writes `<MY_NRIC_0>` labels as
+  before, and a text written about the masked one still restores. With one it
+  encrypts each value in place, keeping no plaintext, and the undo reads by
+  offset so only the text `anonymize` returned can be restored.
 - **Breaking.** `Analyzer` is `AnalyzerEngine`, and it loads every recognizer
   itself, so `malaysian_analyzer` is gone.
 - An engine takes any secret of 16 bytes or more as its key and stretches it

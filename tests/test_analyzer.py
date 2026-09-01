@@ -156,6 +156,47 @@ def test_another_key_cannot_undo_the_masking(anonymizer):
         DeanonymizeEngine(generate_key()).deanonymize(result.text, result.items)
 
 
+def test_masking_without_a_key_writes_numbered_labels():
+    text = "Order 1234 then 5678."
+    result = AnonymizerEngine().anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert result.text == "Order <DIGITS_0> then <DIGITS_1>."
+
+
+def test_a_repeated_value_earns_one_label():
+    text = "Order 1234, again 1234."
+    result = AnonymizerEngine().anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert result.text == "Order <DIGITS_0>, again <DIGITS_0>."
+
+
+def test_a_keyless_masking_keeps_the_original_on_its_item():
+    text = "Order 1234."
+    result = AnonymizerEngine().anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert [(i.label, i.original) for i in result.items] == [("<DIGITS_0>", "1234")]
+
+
+def test_encrypting_keeps_no_original(anonymizer):
+    """The point of a key: nothing readable is retained beside the masked text."""
+    text = "Order 1234."
+    result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert [item.original for item in result.items] == [None]
+
+
+def test_a_keyless_undo_restores_the_masked_text():
+    text = "Order 1234 then 5678."
+    result = AnonymizerEngine().anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert DeanonymizeEngine().deanonymize(result.text, result.items) == text
+
+
+def test_a_keyless_undo_restores_a_text_the_masking_never_saw():
+    """This is the point of it: an answer written about the masked text."""
+    text = "Order 1234 then 5678."
+    result = AnonymizerEngine().anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    restored = DeanonymizeEngine().deanonymize(
+        "<DIGITS_1> shipped before <DIGITS_0>.", result.items
+    )
+    assert restored == "5678 shipped before 1234."
+
+
 def test_any_secret_the_caller_already_has_serves_as_a_key():
     key = "the-secret-out-of-your-vault"
     text = "Order 1234."
