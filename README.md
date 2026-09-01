@@ -37,3 +37,7 @@ flowchart LR
 ```
 
 > Keep `result.replacements` private because it contains the original PII.
+
+## License
+
+MIT

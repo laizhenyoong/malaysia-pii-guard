@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the package and its test extra
+        run: python -m pip install ".[test]"
+
+      # -o pythonpath= drops the src entry the local bridge adds, so the tests
+      # import the installed package rather than the working tree.
+      - name: Run the tests against the installed package
+        run: python -m pytest tests -q -o pythonpath=

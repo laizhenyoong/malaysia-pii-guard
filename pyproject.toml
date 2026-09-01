@@ -2,15 +2,47 @@
 name = "malaysia-pii-guard"
 version = "0.1.0"
 description = "Guard Malaysian personal information: detect, mask, and restore MyKad, phone, passport, and bank account numbers"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Lai Zhen Yoong", email = "laizhenyoong10@gmail.com" }]
 requires-python = ">=3.9"
+keywords = ["pii", "malaysia", "mykad", "nric", "anonymization", "masking", "privacy"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
+]
 dependencies = ["phonenumbers>=9.0"]
 
 [project.optional-dependencies]
 test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/laizhenyoong/malaysia-pii-guard"
+Source = "https://github.com/laizhenyoong/malaysia-pii-guard"
+Issues = "https://github.com/laizhenyoong/malaysia-pii-guard/issues"
 
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["malaysia_pii_guard*"]
+
+[tool.setuptools.package-data]
+malaysia_pii_guard = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
