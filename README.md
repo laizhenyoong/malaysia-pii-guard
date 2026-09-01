@@ -6,6 +6,16 @@ A Python library for detecting and masking Malaysian PII. It supports MyKad
 numbers, Malaysian phone numbers, passport numbers, bank account numbers, and
 email addresses.
 
+## How it works
+
+| PII | How it works |
+| --- | --- |
+| MyKad / NRIC | Finds 12-digit numbers in dashed, spaced, or plain formats, then checks for a valid birth date and Malaysian state code. |
+| Phone number | Uses Malaysia's numbering plan to detect valid Malaysian phone numbers. |
+| Passport number | Finds one letter followed by eight digits, checks known Malaysian prefixes, and uses nearby passport-related words for context. |
+| Bank account number | Finds 10–16 digit numbers and uses nearby banking-related words to reduce false matches. |
+| Email address | Finds valid email formats and checks that the domain ends with a recognised public suffix. |
+
 ## Quick start
 
 ```bash
