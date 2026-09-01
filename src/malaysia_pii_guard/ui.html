@@ -26,6 +26,8 @@
     --e-passport-bg: #33280f;
     --e-bank: #ff7b8a;
     --e-bank-bg: #3a1a20;
+    --e-email: #62b6ff;
+    --e-email-bg: #12283f;
 
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
@@ -309,6 +311,14 @@
       context: ["account", "acct", "bank", "beneficiary", "deposit", "payee",
                 "transfer", "akaun", "cimb", "rhb", "ocbc", "uob", "hsbc", "bsn"],
       patterns: [{ re: /\b[0-9]{10,16}\b/g, score: 0.05 }]
+    },
+    {
+      entity: "EMAIL_ADDRESS",
+      context: ["email", "mail", "contact", "emel"],
+      // No public suffix list in the page, so the last label only has to look
+      // like a TLD. The Python engine checks it against the real list.
+      patterns: [{ re: /\b[!#$%&'*+\-/=?^_`{|}~\w]+(?:[.!#$%&'*+\-/=?^_`{|}~\w]*[!#$%&'*+\-/=?^_`{|}~\w])?@\w+(?:-+\w+)*(?:\.\w+(?:-+\w+)*)+\b/g, score: 0.5 }],
+      invalid: (t) => !/\.[A-Za-z]{2,}$/.test(t)
     }
   ];
 
@@ -391,10 +401,12 @@
     MY_NRIC: ["--e-nric", "--e-nric-bg"],
     PHONE_NUMBER: ["--e-phone", "--e-phone-bg"],
     MY_PASSPORT: ["--e-passport", "--e-passport-bg"],
-    MY_BANK_ACCOUNT: ["--e-bank", "--e-bank-bg"]
+    MY_BANK_ACCOUNT: ["--e-bank", "--e-bank-bg"],
+    EMAIL_ADDRESS: ["--e-email", "--e-email-bg"]
   };
 
   const SAMPLE = "Customer 880101-14-5523, mobile 012-345 6789, " +
+                 "email siti@example.com.my, " +
                  "wants a callback about account 512345678901.";
 
   let usePython = false;   // flips once the local server answers

@@ -7,6 +7,7 @@ from malaysia_pii_guard.anonymizer import (
     generate_key,
 )
 from malaysia_pii_guard.identifiers.bank_account import MyBankRecognizer
+from malaysia_pii_guard.identifiers.email import EmailRecognizer
 from malaysia_pii_guard.identifiers.nric import MyKadRecognizer
 from malaysia_pii_guard.identifiers.passport import MyPassportRecognizer
 from malaysia_pii_guard.identifiers.phone import MyPhoneRecognizer
@@ -17,6 +18,7 @@ __all__ = [
     "Anonymized",
     "AnonymizerEngine",
     "DeanonymizeEngine",
+    "EmailRecognizer",
     "Finding",
     "Item",
     "MyBankRecognizer",

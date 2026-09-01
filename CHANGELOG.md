@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Detect email addresses as `EMAIL_ADDRESS`, using presidio's pattern and the
+  public suffix list, so a domain with no published suffix is turned away.
+  Added a `tldextract` dependency for the list, read from its bundled snapshot
+  so analyzing a text never reaches the network.
 - **Breaking.** `AnonymizerEngine` and `DeanonymizeEngine` replace the
   `anonymize` and `rehydrate` functions, and `Item` replaces `Replacement`.
 - Masking takes a key now. Without one it writes `<MY_NRIC_0>` labels as before.
