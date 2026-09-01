@@ -6,15 +6,13 @@ from malaysia_pii_guard.recognizer import Pattern, PatternRecognizer
 class MyBankRecognizer(PatternRecognizer):
     """Recognize the Malaysian bank account number.
 
-    No regulator publishes a check digit and there is no IBAN to fall back on,
-    so nothing can be verified. The pattern is scored near zero and the context
-    words carry it.
+    No check digit is published and there is no IBAN to fall back on, so nothing
+    can be verified. The pattern is scored near zero and the context carries it.
     """
 
     ENTITY = "MY_BANK_ACCOUNT"
 
-    # Ten to sixteen digits covers the banks and product vintages we see. Check
-    # the band against your own transaction data.
+    # Ten to sixteen digits covers the banks and product vintages we see.
     PATTERNS = [
         Pattern("Bank Account (weak)", r"\b[0-9]{10,16}\b", 0.05),
     ]

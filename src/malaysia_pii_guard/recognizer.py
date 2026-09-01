@@ -41,8 +41,8 @@ def best_per_span(findings: List[Finding]) -> List[Finding]:
 class Recognizer:
     """Base for anything that claims spans of a text.
 
-    CONTEXT holds words that, sitting near a match, argue it is what it looks
-    like. The analyzer weighs them, not the recognizer.
+    CONTEXT holds words that, near a match, argue it is what it looks like. The
+    analyzer weighs them, not the recognizer.
     """
 
     ENTITY: ClassVar[str] = ""
@@ -61,8 +61,7 @@ class PatternRecognizer(Recognizer):
     """A recognizer whose claims come from regular expressions.
 
     A pattern's score is what a bare match is worth before context is weighed,
-    so an ambiguous shape is scored near zero on purpose. Where the digits carry
-    checkable structure, invalidate_result throws out the impossible ones.
+    so an ambiguous shape is scored near zero on purpose.
     """
 
     PATTERNS: ClassVar[Sequence[Pattern]] = ()

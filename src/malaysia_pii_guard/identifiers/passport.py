@@ -6,9 +6,8 @@ from malaysia_pii_guard.recognizer import Pattern, PatternRecognizer
 class MyPassportRecognizer(PatternRecognizer):
     """Recognize the Malaysian passport number.
 
-    Nothing in the number can be checked: no published check digit, no date.
-    Both patterns are scored low and the context words carry them. The prefix
-    only decides which of the two a match earns.
+    Nothing in the number can be checked, so both patterns are scored low and
+    the context carries them. The prefix only decides which of the two applies.
     """
 
     ENTITY = "MY_PASSPORT"

@@ -11,9 +11,8 @@ class MyPhoneRecognizer(Recognizer):
     """Recognize the Malaysian phone number.
 
     phonenumbers carries the allocated numbering plan, so precision comes from
-    that data rather than a pattern of ours. At leniency VALID a MyKad number,
-    a bank account and an LHDN reference are all turned away, with no exclusion
-    rules to maintain.
+    that data rather than a pattern of ours, and a MyKad number, a bank account
+    and an LHDN reference are turned away with no exclusion rules to maintain.
     """
 
     ENTITY = "PHONE_NUMBER"

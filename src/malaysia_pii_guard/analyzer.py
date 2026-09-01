@@ -6,8 +6,7 @@ from typing import Iterable, List, Optional, Sequence
 from malaysia_pii_guard.identifiers import RECOGNIZERS
 from malaysia_pii_guard.recognizer import Finding, Recognizer
 
-# A shape scored near zero needs the floor as well as the boost. Adding 0.35
-# to 0.05 still leaves it in the noise.
+# A near-zero score needs the floor as well as the boost: 0.05 + 0.35 is noise.
 CONTEXT_BOOST = 0.35
 MIN_SCORE_WITH_CONTEXT = 0.4
 
@@ -27,7 +26,7 @@ def _weigh_context(text: str, finding: Finding, context: Sequence[str]) -> Findi
     """Lift the score when a context word sits near the span.
 
     A context word counts anywhere inside a nearby word, so "bank" is found in
-    "Maybank". Short words are the cost: "tel" is found in "hotel".
+    "Maybank" and, at the cost of a false positive, "tel" in "hotel".
     """
     if context and any(
         word in nearby for nearby in _nearby_words(text, finding) for word in context
@@ -41,11 +40,9 @@ def _weigh_context(text: str, finding: Finding, context: Sequence[str]) -> Findi
 class AnalyzerEngine:
     """Runs every recognizer it holds over a text.
 
-    Built with no arguments it loads every recognizer in this package, which is
-    what a caller guarding Malaysian text wants. Pass recognizers to narrow it.
-
-    Overlapping claims are left in. Ten digits really is both a mobile number
-    and an account number, and anonymize settles it by score.
+    Built with no arguments it loads every recognizer in this package. Ten
+    digits really is both a mobile number and an account number, so overlapping
+    claims are left in for anonymize to settle by score.
     """
 
     def __init__(
@@ -67,8 +64,7 @@ class AnalyzerEngine:
         """Every claim at or above the threshold, strongest first.
 
         The threshold defaults to zero, so everything suspect is masked until a
-        caller decides otherwise. At MIN_SCORE_WITH_CONTEXT only what a context
-        word vouched for survives.
+        caller decides otherwise.
         """
         if score_threshold is None:
             score_threshold = self.score_threshold

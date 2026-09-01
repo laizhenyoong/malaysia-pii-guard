@@ -4,8 +4,8 @@ from datetime import date
 
 from malaysia_pii_guard.recognizer import Pattern, PatternRecognizer
 
-# Place-of-birth codes JPN has never issued. This does most of the
-# false-positive filtering, so audit it against a current JPN source.
+# Place-of-birth codes JPN has never issued, which does most of the
+# false-positive filtering. Worth auditing against a current JPN source.
 NEVER_ISSUED_STATE_CODES = frozenset(
     {"00", "17", "18", "19", "20", "69", "70", "73", "80", "81", "94", "95", "96", "97"}
 )
@@ -27,8 +27,7 @@ class MyKadRecognizer(PatternRecognizer):
     """Recognize the Malaysian MyKad / NRIC number.
 
     There is no check digit, since the trailing digit encodes gender. Precision
-    comes from structure instead: the first six digits must be a real date, and
-    the place-of-birth code must be one JPN issues.
+    comes from structure: a real date, and a place-of-birth code JPN issues.
     """
 
     ENTITY = "MY_NRIC"

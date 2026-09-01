@@ -1,10 +1,8 @@
 """Settling the overlaps, masking a text, and putting the originals back.
 
-Masking without a key writes a numbered label, which keeps the masked text
-readable. Masking with a key encrypts each value instead, so the masked text
-carries no plaintext. Either way the undo swaps what was written back for what
-it stood for, wherever it turns up, so a text written about the masked one
-restores too.
+Without a key each value becomes a numbered label, with one it becomes
+ciphertext. Either way the undo swaps back what was written, wherever it turns
+up, so a text written about the masked one restores too.
 """
 
 import secrets
@@ -34,9 +32,7 @@ def _cipher(key: Union[bytes, str]) -> Fernet:
     """A cipher from whatever secret the caller already has.
 
     Fernet wants 32 url-safe base64 bytes, which no secret store hands you, so
-    the key material is stretched to that shape instead of being demanded in it.
-    The same material always derives the same cipher, which is what lets a
-    DeanonymizeEngine undo what an AnonymizerEngine did.
+    the material is stretched to that shape rather than demanded in it.
     """
     material = key.encode() if isinstance(key, str) else key
     if len(material) < _MIN_KEY_BYTES:
@@ -60,8 +56,7 @@ def resolve(findings: Iterable[Finding]) -> List[Finding]:
 class Item:
     """What one masked value was replaced by, and what it stood for.
 
-    original is filled by keyless masking only. Encrypting keeps no plaintext,
-    which is the point of it, and recovers the value from the label instead.
+    original is filled by keyless masking only; encrypting keeps no plaintext.
     """
 
     entity_type: str
@@ -82,11 +77,7 @@ class Anonymized:
 
 
 class AnonymizerEngine:
-    """Replaces every span a finding claims.
-
-    Built without a key it writes numbered labels and keeps the originals on the
-    items. Built with one it encrypts instead and keeps none.
-    """
+    """Masks every span a finding claims, with labels or, given a key, ciphertext."""
 
     def __init__(self, key: Optional[Union[bytes, str]] = None):
         self._fernet = _cipher(key) if key is not None else None
@@ -121,9 +112,8 @@ class AnonymizerEngine:
 class DeanonymizeEngine:
     """Puts the originals back wherever what replaced them turns up.
 
-    Built without a key it reads each original off its item; built with one it
-    decrypts the label instead. Neither reads an offset, so a text written about
-    the masked one restores as readily as the masked text itself.
+    Without a key it reads each original off its item, with one it decrypts the
+    label. Neither reads an offset.
     """
 
     def __init__(self, key: Optional[Union[bytes, str]] = None):
