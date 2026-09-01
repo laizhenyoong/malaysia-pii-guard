@@ -1,7 +1,7 @@
 [project]
 name = "malaysia-pii-guard"
 version = "0.1.0"
-description = "Guard Malaysian personal information: detect, mask, and restore MyKad, phone, passport, and bank account numbers"
+description = "A Python library for detecting and masking Malaysian PII"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Lai Zhen Yoong", email = "laizhenyoong10@gmail.com" }]
