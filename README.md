@@ -8,6 +8,7 @@ numbers, Malaysian phone numbers, passport numbers, and bank account numbers.
 ## Quick start
 
 ```bash
+pip install malaysia-pii-guard
 python -m malaysia_pii_guard
 ```
 
