@@ -13,8 +13,6 @@ class MyBankRecognizer(PatternRecognizer):
 
     ENTITY = "MY_BANK_ACCOUNT"
 
-    COUNTRY_CODE = "my"
-
     # Ten to sixteen digits covers the banks and product vintages we see. Check
     # the band against your own transaction data.
     PATTERNS = [

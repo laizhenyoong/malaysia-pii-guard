@@ -33,8 +33,6 @@ class MyKadRecognizer(PatternRecognizer):
 
     ENTITY = "MY_NRIC"
 
-    COUNTRY_CODE = "my"
-
     # The lookarounds stop a match from being a slice of a longer run of digits
     # and dashes, such as the start of a reference number.
     PATTERNS = [

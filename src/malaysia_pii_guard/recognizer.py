@@ -2,7 +2,7 @@
 
 import re
 from dataclasses import dataclass
-from typing import ClassVar, List, Optional, Sequence
+from typing import ClassVar, List, Sequence
 
 
 @dataclass(frozen=True)
@@ -22,7 +22,6 @@ class Finding:
     start: int
     end: int
     score: float
-    recognizer: str = ""
 
     def overlaps(self, other: "Finding") -> bool:
         """Whether the two spans share at least one character."""
@@ -49,15 +48,9 @@ class Recognizer:
     ENTITY: ClassVar[str] = ""
     CONTEXT: ClassVar[Sequence[str]] = ()
 
-    def __init__(
-        self,
-        entity: Optional[str] = None,
-        context: Optional[Sequence[str]] = None,
-        name: Optional[str] = None,
-    ):
-        self.entity = entity or self.ENTITY
-        self.context = [word.lower() for word in (context or self.CONTEXT)]
-        self.name = name or type(self).__name__
+    def __init__(self):
+        self.entity = self.ENTITY
+        self.context = [word.lower() for word in self.CONTEXT]
 
     def analyze(self, text: str) -> List[Finding]:
         """Every span of the text this recognizer claims."""
@@ -74,14 +67,10 @@ class PatternRecognizer(Recognizer):
 
     PATTERNS: ClassVar[Sequence[Pattern]] = ()
 
-    def __init__(self, patterns: Optional[Sequence[Pattern]] = None, **kwargs):
-        self.patterns = list(patterns or self.PATTERNS)
-        super().__init__(**kwargs)
-
     def analyze(self, text: str) -> List[Finding]:
         """Every span matched by a pattern and not thrown out."""
         findings = []
-        for pattern in self.patterns:
+        for pattern in self.PATTERNS:
             for match in re.finditer(pattern.regex, text):
                 if self.invalidate_result(match.group()):
                     continue
@@ -91,7 +80,6 @@ class PatternRecognizer(Recognizer):
                         start=match.start(),
                         end=match.end(),
                         score=pattern.score,
-                        recognizer=self.name,
                     )
                 )
         return best_per_span(findings)

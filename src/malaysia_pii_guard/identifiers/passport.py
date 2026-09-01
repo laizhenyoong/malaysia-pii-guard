@@ -13,8 +13,6 @@ class MyPassportRecognizer(PatternRecognizer):
 
     ENTITY = "MY_PASSPORT"
 
-    COUNTRY_CODE = "my"
-
     # A and H are the international series, K the restricted one. A new series
     # still matches the second pattern, so it is scored down, not missed.
     PATTERNS = [

@@ -18,11 +18,9 @@ class MyPhoneRecognizer(Recognizer):
 
     ENTITY = "PHONE_NUMBER"
 
-    COUNTRY_CODE = "my"
-
     SCORE = 0.4
 
-    REGIONS = ("MY",)
+    REGION = "MY"
 
     # VALID means the plan actually allocates the block. POSSIBLE checks only
     # the length, and lets an IC number through.
@@ -32,18 +30,15 @@ class MyPhoneRecognizer(Recognizer):
 
     def analyze(self, text: str) -> List[Finding]:
         """Every allocated phone number in the text."""
-        findings = []
-        for region in self.REGIONS:
+        findings = [
+            Finding(
+                entity_type=self.entity,
+                start=match.start,
+                end=match.end,
+                score=self.SCORE,
+            )
             for match in phonenumbers.PhoneNumberMatcher(
-                text, region, leniency=self.LENIENCY
-            ):
-                findings.append(
-                    Finding(
-                        entity_type=self.entity,
-                        start=match.start,
-                        end=match.end,
-                        score=self.SCORE,
-                        recognizer=self.name,
-                    )
-                )
+                text, self.REGION, leniency=self.LENIENCY
+            )
+        ]
         return best_per_span(findings)
