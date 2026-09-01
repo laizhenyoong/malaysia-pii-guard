@@ -1,4 +1,4 @@
-# pii-guard
+# malaysia-pii-guard
 
 Detect, mask, and restore Malaysian MyKad, phone, passport, and bank account numbers.
 
@@ -13,7 +13,7 @@ python -m pip install .
 ## Usage
 
 ```python
-from pii_guard import anonymize, malaysian_analyzer, rehydrate
+from malaysia_pii_guard import anonymize, malaysian_analyzer, rehydrate
 
 text = "IC 880101-14-5523, mobile 012-345 6789"
 analyzer = malaysian_analyzer(score_threshold=0.4)

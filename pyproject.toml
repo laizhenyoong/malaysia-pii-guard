@@ -1,7 +1,7 @@
 [project]
-name = "pii-guard"
+name = "malaysia-pii-guard"
 version = "0.1.0"
-description = "Malaysian PII detection"
+description = "Guard Malaysian personal information: detect, mask, and restore MyKad, phone, passport, and bank account numbers"
 requires-python = ">=3.9"
 dependencies = ["phonenumbers>=9.0"]
 
@@ -13,4 +13,4 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["pii_guard*"]
+include = ["malaysia_pii_guard*"]

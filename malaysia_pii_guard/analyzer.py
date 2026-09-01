@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-from pii_guard.recognizer import Finding, Recognizer
+from malaysia_pii_guard.recognizer import Finding, Recognizer
 
 # A shape scored near zero needs the floor as well as the boost. Adding 0.35
 # to 0.05 still leaves it in the noise.

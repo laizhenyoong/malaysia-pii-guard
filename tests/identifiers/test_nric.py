@@ -1,6 +1,6 @@
 import pytest
 
-from pii_guard import MyKadRecognizer, anonymize, malaysian_analyzer
+from malaysia_pii_guard import MyKadRecognizer, anonymize, malaysian_analyzer
 
 
 @pytest.fixture(scope="module")

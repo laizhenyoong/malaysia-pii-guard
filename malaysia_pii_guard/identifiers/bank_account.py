@@ -1,6 +1,6 @@
 """Recognizer for the Malaysian bank account number."""
 
-from pii_guard.recognizer import Pattern, PatternRecognizer
+from malaysia_pii_guard.recognizer import Pattern, PatternRecognizer
 
 
 class MyBankRecognizer(PatternRecognizer):

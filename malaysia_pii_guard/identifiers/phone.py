@@ -4,7 +4,7 @@ from typing import List
 
 import phonenumbers
 
-from pii_guard.recognizer import Finding, Recognizer, best_per_span
+from malaysia_pii_guard.recognizer import Finding, Recognizer, best_per_span
 
 
 class MyPhoneRecognizer(Recognizer):

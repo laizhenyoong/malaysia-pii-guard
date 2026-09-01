@@ -1,6 +1,6 @@
 import pytest
 
-from pii_guard import (
+from malaysia_pii_guard import (
     Analyzer,
     Finding,
     Pattern,
@@ -10,7 +10,7 @@ from pii_guard import (
     rehydrate,
     resolve,
 )
-from pii_guard.analyzer import CONTEXT_WINDOW, MIN_SCORE_WITH_CONTEXT
+from malaysia_pii_guard.analyzer import CONTEXT_WINDOW, MIN_SCORE_WITH_CONTEXT
 
 
 class Digits(PatternRecognizer):
