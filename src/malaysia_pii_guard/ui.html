@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>malaysia-pii-guard</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #07090a;
+    --panel: #0d1113;
+    --panel-2: #11161a;
+    --line: #1d262b;
+    --line-2: #2b3941;
+    --ink: #d3dde3;
+    --ink-2: #93a4ae;
+    --ink-3: #5f7280;
+    --green: #4ade80;
+
+    --e-nric: #c792ea;
+    --e-nric-bg: #2a1b3d;
+    --e-phone: #4ade80;
+    --e-phone-bg: #0f2f21;
+    --e-passport: #e5c07b;
+    --e-passport-bg: #33280f;
+    --e-bank: #ff7b8a;
+    --e-bank-bg: #3a1a20;
+
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 36px 22px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* prompt line */
+
+  h1 { font-size: 14px; font-weight: 500; margin: 0; color: var(--ink); }
+  h1::before { content: "$ "; color: var(--green); }
+
+  .sub { color: var(--ink-3); font-size: 12.5px; margin: 2px 0 0; }
+  .sub::before { content: "# "; }
+
+  .caret {
+    display: inline-block;
+    width: 7px;
+    height: 14px;
+    margin-left: 6px;
+    vertical-align: -2px;
+    background: var(--green);
+    animation: blink 1.1s step-end infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* panels */
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+    border-radius: 4px 4px 0 0;
+  }
+
+  .label {
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .label::before { content: "> "; color: var(--green); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  /* input and output */
+
+  .editor { position: relative; }
+
+  .editor .mirror,
+  .editor textarea,
+  .out {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.75;
+    padding: 12px 14px;
+    border: 0;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    width: 100%;
+    min-height: 168px;
+    margin: 0;
+    background: transparent;
+  }
+
+  .editor .mirror {
+    position: absolute;
+    inset: 0;
+    color: transparent;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .editor textarea {
+    position: relative;
+    display: block;
+    color: var(--ink);
+    resize: vertical;
+    caret-color: var(--green);
+  }
+
+  .editor textarea:focus-visible { outline: 1px solid var(--line-2); outline-offset: -1px; }
+
+  .mirror mark {
+    background: var(--hl-bg);
+    color: transparent;
+    border-radius: 2px;
+  }
+
+  .out { overflow-x: auto; }
+
+  .tok { padding: 1px 3px; border-radius: 2px; white-space: nowrap; }
+
+  .empty { color: var(--ink-3); }
+
+  /* threshold */
+
+  .threshold { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-3); }
+
+  input[type="range"] {
+    width: 130px;
+    accent-color: var(--green);
+    cursor: pointer;
+  }
+
+  input[type="range"]:focus-visible { outline: 1px solid var(--line-2); outline-offset: 3px; }
+
+  .threshold b { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--green); }
+
+  /* detections */
+
+  .table-scroll { overflow-x: auto; padding: 4px 12px 10px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+  th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 8px 16px 8px 0;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 6px 16px 6px 0;
+    border-bottom: 1px dashed var(--line);
+    white-space: nowrap;
+    color: var(--ink-2);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  td.score { font-variant-numeric: tabular-nums; color: var(--green); }
+  td.orig { color: var(--ink); white-space: normal; }
+
+  ::selection { background: #1f3d31; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <h1>malaysia-pii-guard<span class="caret"></span></h1>
+    <p class="sub">Detecting and masking Malaysian PII.</p>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="head"><span class="label">Input</span></div>
+      <div class="editor">
+        <div class="mirror" id="mirror" aria-hidden="true"></div>
+        <textarea id="input" spellcheck="false" aria-label="Text to mask"></textarea>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="head"><span class="label">Masked</span></div>
+      <div class="out" id="masked"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="head">
+      <span class="label">Detected</span>
+      <div class="threshold">
+        <label for="thresh">Score threshold</label>
+        <input type="range" id="thresh" min="0" max="0.9" step="0.05" value="0.4">
+        <b id="threshVal">0.40</b>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Label</th><th>Type</th><th>Score</th><th>Original</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- the browser mirror of the library, used when served statically ---------- */
+
+  const CONTEXT_BOOST = 0.35;
+  const MIN_SCORE_WITH_CONTEXT = 0.4;
+  const CONTEXT_WINDOW = 5;
+
+  const NEVER_ISSUED = ["00","17","18","19","20","69","70","73","80","81","94","95","96","97"];
+
+  function isRealDate(yymmdd) {
+    const yy = +yymmdd.slice(0, 2), mm = +yymmdd.slice(2, 4), dd = +yymmdd.slice(4, 6);
+    return [1900, 2000].some((c) => {
+      const d = new Date(c + yy, mm - 1, dd);
+      return d.getFullYear() === c + yy && d.getMonth() === mm - 1 && d.getDate() === dd;
+    });
+  }
+
+  const RECOGNIZERS = [
+    {
+      entity: "MY_NRIC",
+      context: ["ic", "nric", "mykad", "identity", "kp"],
+      patterns: [
+        { re: /(?<![\d-])\d{6}-\d{2}-\d{4}(?![\d-])/g, score: 0.6 },
+        { re: /(?<![\d-])\d{6} \d{2} \d{4}(?![\d-])/g, score: 0.4 },
+        { re: /(?<![\d-])\d{12}(?![\d-])/g, score: 0.05 }
+      ],
+      invalid: (t) => {
+        const d = t.replace(/\D/g, "");
+        return new Set(d).size === 1 || d.slice(8) === "0000" ||
+          NEVER_ISSUED.indexOf(d.slice(6, 8)) !== -1 || !isRealDate(d.slice(0, 6));
+      }
+    },
+    {
+      entity: "PHONE_NUMBER",
+      context: ["phone", "number", "telephone", "cell", "cellphone", "mobile", "call", "hubungi", "tel"],
+      patterns: [
+        { re: /(?<!\d)(?:\+?60[\s-]?|0)1\d[\s-]?\d{3,4}[\s-]?\d{4}(?!\d)/g, score: 0.4 },
+        { re: /(?<!\d)(?:\+?60[\s-]?|0)[3-9][\s-]?\d{3,4}[\s-]?\d{4}(?!\d)/g, score: 0.4 }
+      ]
+    },
+    {
+      entity: "MY_PASSPORT",
+      context: ["passport", "travel", "document", "immigration", "pasport"],
+      patterns: [
+        { re: /\b[AHKahk]\d{8}\b/g, score: 0.1 },
+        { re: /\b[A-Za-z]\d{8}\b/g, score: 0.05 }
+      ],
+      invalid: (t) => new Set(t.slice(1)).size === 1
+    },
+    {
+      entity: "MY_BANK_ACCOUNT",
+      context: ["account", "acct", "bank", "beneficiary", "deposit", "payee",
+                "transfer", "akaun", "cimb", "rhb", "ocbc", "uob", "hsbc", "bsn"],
+      patterns: [{ re: /\b[0-9]{10,16}\b/g, score: 0.05 }]
+    }
+  ];
+
+  const WORD = /[0-9A-Za-z_]+/g;
+
+  function bestPerSpan(list) {
+    const best = new Map();
+    list.forEach((f) => {
+      const k = f.start + ":" + f.end;
+      if (!best.has(k) || f.score > best.get(k).score) best.set(k, f);
+    });
+    return Array.from(best.values());
+  }
+
+  function weighContext(text, f, context) {
+    const before = (text.slice(0, f.start).match(WORD) || []).slice(-CONTEXT_WINDOW);
+    const after = (text.slice(f.end).match(WORD) || []).slice(0, CONTEXT_WINDOW);
+    const near = before.concat(after).map((w) => w.toLowerCase());
+    if (near.some((n) => context.some((w) => n.indexOf(w) !== -1))) {
+      f.score = Math.min(1, Math.max(f.score + CONTEXT_BOOST, MIN_SCORE_WITH_CONTEXT));
+    }
+    return f;
+  }
+
+  function analyze(text, threshold) {
+    const out = [];
+    RECOGNIZERS.forEach((r) => {
+      const raw = [];
+      r.patterns.forEach((p) => {
+        p.re.lastIndex = 0;
+        let m;
+        while ((m = p.re.exec(text)) !== null) {
+          if (m[0] === "") { p.re.lastIndex++; continue; }
+          if (r.invalid && r.invalid(m[0])) continue;
+          raw.push({ entity: r.entity, start: m.index, end: m.index + m[0].length, score: p.score });
+        }
+      });
+      bestPerSpan(raw).forEach((f) => {
+        weighContext(text, f, r.context);
+        if (f.score >= threshold) out.push(f);
+      });
+    });
+    return out;
+  }
+
+  function resolve(findings) {
+    const kept = [];
+    findings.slice().sort((a, b) => b.score - a.score || a.start - b.start).forEach((f) => {
+      if (!kept.some((k) => f.start < k.end && k.start < f.end)) kept.push(f);
+    });
+    return kept.sort((a, b) => a.start - b.start);
+  }
+
+  function anonymizeLocally(text, threshold) {
+    const spans = resolve(analyze(text, threshold));
+    const labels = new Map(), counts = new Map(), detections = [], parts = [];
+    let read = 0;
+    spans.forEach((f) => {
+      const original = text.slice(f.start, f.end);
+      const key = f.entity + " " + original;
+      if (!labels.has(key)) {
+        const n = counts.get(f.entity) || 0;
+        labels.set(key, "<" + f.entity + "_" + n + ">");
+        counts.set(f.entity, n + 1);
+      }
+      parts.push(text.slice(read, f.start), labels.get(key));
+      detections.push({
+        entity: f.entity, label: labels.get(key), original: original,
+        score: f.score, start: f.start, end: f.end
+      });
+      read = f.end;
+    });
+    parts.push(text.slice(read));
+    return { masked: parts.join(""), detections: detections };
+  }
+
+  /* ---------- the page ---------- */
+
+  const HUE = {
+    MY_NRIC: ["--e-nric", "--e-nric-bg"],
+    PHONE_NUMBER: ["--e-phone", "--e-phone-bg"],
+    MY_PASSPORT: ["--e-passport", "--e-passport-bg"],
+    MY_BANK_ACCOUNT: ["--e-bank", "--e-bank-bg"]
+  };
+
+  const SAMPLE = "Customer 880101-14-5523, mobile 012-345 6789, " +
+                 "wants a callback about account 512345678901.";
+
+  let usePython = false;   // flips once the local server answers
+  let pending = null;
+  let timer = null;
+
+  const $ = (id) => document.getElementById(id);
+  const input = $("input"), mirror = $("mirror"), maskedEl = $("masked"), rowsEl = $("rows");
+  const threshEl = $("thresh"), threshVal = $("threshVal");
+
+  const hue = (entity, i) => "var(" + (HUE[entity] || ["--ink-2", "--surface-2"])[i] + ")";
+  const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+  function draw(text, result) {
+    let html = "", read = 0;
+    result.detections.forEach((d) => {
+      html += esc(text.slice(read, d.start)) +
+        '<mark style="--hl-bg:' + hue(d.entity, 1) + '">' + esc(text.slice(d.start, d.end)) + "</mark>";
+      read = d.end;
+    });
+    mirror.innerHTML = html + esc(text.slice(read)) + "\n";
+
+    const byLabel = {};
+    result.detections.forEach((d) => { byLabel[d.label] = d.entity; });
+
+    maskedEl.innerHTML = text.trim()
+      ? esc(result.masked).replace(/&lt;([A-Z_]+_\d+)&gt;/g, (m, inner) => {
+          const e = byLabel["<" + inner + ">"];
+          return e
+            ? '<span class="tok" style="color:' + hue(e, 0) + ';background:' + hue(e, 1) + '">' + m + "</span>"
+            : m;
+        })
+      : '<span class="empty">Nothing to mask yet.</span>';
+
+    rowsEl.innerHTML = result.detections.length
+      ? result.detections.map((d) =>
+          "<tr>" +
+            '<td style="color:' + hue(d.entity, 0) + '">' + esc(d.label) + "</td>" +
+            "<td>" + esc(d.entity.replace(/^MY_/, "")) + "</td>" +
+            '<td class="score">' + d.score.toFixed(2) + "</td>" +
+            '<td class="orig">' + esc(d.original) + "</td>" +
+          "</tr>").join("")
+      : '<tr><td colspan="4" class="orig"><span class="empty">Nothing above the threshold.</span></td></tr>';
+  }
+
+  function run() {
+    const text = input.value;
+    const threshold = parseFloat(threshEl.value);
+
+    if (!usePython) {
+      draw(text, anonymizeLocally(text, threshold));
+      return;
+    }
+
+    if (pending) pending.abort();
+    pending = new AbortController();
+    fetch("api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: text, threshold: threshold }),
+      signal: pending.signal
+    })
+      .then((r) => r.json())
+      .then((result) => draw(text, result))
+      .catch((error) => {
+        if (error.name === "AbortError") return;
+        usePython = false;
+        draw(text, anonymizeLocally(text, threshold));
+      });
+  }
+
+  function schedule() {
+    clearTimeout(timer);
+    timer = setTimeout(run, 90);
+  }
+
+  input.addEventListener("input", schedule);
+  input.addEventListener("scroll", () => { mirror.scrollTop = input.scrollTop; });
+
+  threshEl.addEventListener("input", () => {
+    threshVal.textContent = parseFloat(threshEl.value).toFixed(2);
+    schedule();
+  });
+
+  input.value = SAMPLE;
+  run();
+
+  fetch("api/meta")
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no api"))))
+    .then(() => { usePython = true; run(); })
+    .catch(() => {});
+})();
+</script>
+</body>
+</html>
