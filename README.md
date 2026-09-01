@@ -14,7 +14,7 @@ uvx malaysia-pii-guard
 
 Opens a page on http://127.0.0.1:8765 that masks as you type.
 
-[![MyKad, phone, passport, bank account numbers, and emails being masked as they are typed](assets/demo.gif)](assets/demo.gif)
+![MyKad, phone, passport, bank account numbers, and emails being masked as they are typed](assets/demo.svg)
 
 ## Usage
 
