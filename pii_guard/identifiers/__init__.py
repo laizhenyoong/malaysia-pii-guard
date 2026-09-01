@@ -1,10 +1,10 @@
-"""The set of recognizers a Malaysian deployment runs."""
+"""A recognizer for each Malaysian identifier the library knows."""
 
 from pii_guard.analyzer import Analyzer
-from pii_guard.malaysia.bank_account import MyBankRecognizer
-from pii_guard.malaysia.nric import MyKadRecognizer
-from pii_guard.malaysia.passport import MyPassportRecognizer
-from pii_guard.malaysia.phone import MyPhoneRecognizer
+from pii_guard.identifiers.bank_account import MyBankRecognizer
+from pii_guard.identifiers.nric import MyKadRecognizer
+from pii_guard.identifiers.passport import MyPassportRecognizer
+from pii_guard.identifiers.phone import MyPhoneRecognizer
 
 
 def malaysian_analyzer(score_threshold: float = 0.0) -> Analyzer:
