@@ -12,14 +12,13 @@ email addresses.
 uvx malaysia-pii-guard
 ```
 
-Opens a page on http://127.0.0.1:8765 that masks as you type. [uv](https://docs.astral.sh/uv/)
-runs it in a throwaway environment, so nothing is installed into your system Python.
+Opens a page on http://127.0.0.1:8765 that masks as you type.
 
 [![MyKad, phone, passport, bank account numbers, and emails being masked as they are typed](assets/demo.gif)](assets/demo.gif)
 
 ## Usage
 
-Add it to your project. `uv` keeps it in the project's `.venv`, never global:
+Add it to your project:
 
 ```bash
 uv add malaysia-pii-guard
