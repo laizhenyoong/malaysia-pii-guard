@@ -47,9 +47,7 @@ print(DeanonymizeEngine(key).deanonymize(result.text, result.items))
 ```
 
 The key is any secret of 16 bytes or more, so it can come from the environment,
-a vault, or a KMS. `generate_key()` makes one if you have none. Decrypting reads
-by offset, so restore the text `anonymize` returned rather than one that was
-edited in between.
+a vault, or a KMS. `generate_key()` makes one if you have none.
 
 ## License
 

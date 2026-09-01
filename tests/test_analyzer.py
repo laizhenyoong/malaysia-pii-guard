@@ -10,8 +10,8 @@ from malaysia_pii_guard import (
     Pattern,
     PatternRecognizer,
     generate_key,
-    resolve,
 )
+from malaysia_pii_guard.anonymizer import resolve
 from malaysia_pii_guard.analyzer import CONTEXT_WINDOW, MIN_SCORE_WITH_CONTEXT
 
 
@@ -105,21 +105,19 @@ def test_anonymize_leaves_a_text_with_no_findings_alone(anonymizer):
     assert result.items == []
 
 
-def test_an_item_marks_where_its_ciphertext_landed(anonymizer):
+def test_an_item_carries_what_was_written_into_the_text(anonymizer):
     text = "Order 1234 then 5678."
     result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     first, second = result.items
-    assert result.text[: first.start] == "Order "
-    assert result.text[first.end : second.start] == " then "
-    assert result.text[second.end :] == "."
+    assert result.text == f"Order {first.label} then {second.label}."
 
 
 def test_a_repeated_value_earns_a_fresh_ciphertext(anonymizer):
-    """Encryption is randomized, so a repeat no longer collapses into one token."""
+    """Encryption is randomized, so a repeat does not collapse into one token."""
     text = "Order 1234, again 1234."
     result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     first, second = result.items
-    assert result.text[first.start : first.end] != result.text[second.start : second.end]
+    assert first.label != second.label
 
 
 def test_an_anonymized_result_reads_as_its_masked_text(anonymizer):
@@ -141,12 +139,13 @@ def test_deanonymize_undoes_every_span_of_a_long_text(anonymizer, deanonymizer):
     assert deanonymizer.deanonymize(result.text, result.items) == text
 
 
-def test_deanonymize_needs_the_very_text_anonymize_returned(anonymizer, deanonymizer):
-    """The items are offsets into that text, so an edit in between breaks the undo."""
+def test_a_keyed_undo_restores_a_text_the_masking_never_saw(anonymizer, deanonymizer):
+    """A key buys secrecy, not the offsets: a rewritten text still restores."""
     text = "Order 1234 then 5678."
     result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
-    with pytest.raises(InvalidToken):
-        deanonymizer.deanonymize("Summary: " + result.text, result.items)
+    first, second = result.items
+    restored = deanonymizer.deanonymize(f"{second.label} shipped before {first.label}.", result.items)
+    assert restored == "5678 shipped before 1234."
 
 
 def test_another_key_cannot_undo_the_masking(anonymizer):

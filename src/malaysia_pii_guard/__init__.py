@@ -5,7 +5,6 @@ from malaysia_pii_guard.anonymizer import (
     DeanonymizeEngine,
     Item,
     generate_key,
-    resolve,
 )
 from malaysia_pii_guard.identifiers.bank_account import MyBankRecognizer
 from malaysia_pii_guard.identifiers.nric import MyKadRecognizer
@@ -28,5 +27,4 @@ __all__ = [
     "PatternRecognizer",
     "Recognizer",
     "generate_key",
-    "resolve",
 ]
