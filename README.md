@@ -1,6 +1,6 @@
 # malaysia-pii-guard
 
-![Text with a MyKad, phone, and bank account number going in, tokens coming out, and the originals restored](assets/hero.png)
+![A form with a MyKad, phone, email, and bank account number going in, tokens coming out, and the originals restored](assets/hero.png)
 
 A Python library for detecting and masking Malaysian PII. It supports MyKad
 numbers, Malaysian phone numbers, passport numbers, bank account numbers, and
