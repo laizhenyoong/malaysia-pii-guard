@@ -1,6 +1,6 @@
 import pytest
 
-from malaysia_pii_guard import MyBankRecognizer, anonymize, malaysian_analyzer
+from malaysia_pii_guard import AnalyzerEngine, MyBankRecognizer, anonymize
 
 
 @pytest.fixture(scope="module")
@@ -10,7 +10,7 @@ def recognizer():
 
 @pytest.fixture(scope="module")
 def analyzer():
-    return malaysian_analyzer()
+    return AnalyzerEngine()
 
 
 def scores(recognizer, text):

@@ -1,12 +1,11 @@
 import pytest
 
 from malaysia_pii_guard import (
-    Analyzer,
+    AnalyzerEngine,
     Finding,
     Pattern,
     PatternRecognizer,
     anonymize,
-    malaysian_analyzer,
     rehydrate,
     resolve,
 )
@@ -26,7 +25,7 @@ class Weak(PatternRecognizer):
 
 @pytest.fixture
 def analyzer():
-    return Analyzer([Digits()])
+    return AnalyzerEngine([Digits()])
 
 
 def test_a_bare_match_keeps_its_pattern_score(analyzer):
@@ -43,7 +42,7 @@ def test_a_context_word_adds_to_a_score_already_above_the_floor():
     class Strong(Digits):
         PATTERNS = [Pattern("digits", r"\b\d{4}\b", 0.6)]
 
-    (finding,) = Analyzer([Strong()]).analyze("Invoice 1234 shipped.")
+    (finding,) = AnalyzerEngine([Strong()]).analyze("Invoice 1234 shipped.")
     assert finding.score == pytest.approx(0.95)
 
 
@@ -63,7 +62,7 @@ def test_the_score_never_passes_one():
     class Certain(Digits):
         PATTERNS = [Pattern("digits", r"\b\d{4}\b", 0.9)]
 
-    (finding,) = Analyzer([Certain()]).analyze("Invoice 1234 shipped.")
+    (finding,) = AnalyzerEngine([Certain()]).analyze("Invoice 1234 shipped.")
     assert finding.score == pytest.approx(1.0)
 
 
@@ -73,12 +72,12 @@ def test_entities_can_be_narrowed(analyzer):
 
 
 def test_overlapping_claims_are_both_returned():
-    findings = Analyzer([Digits(), Weak()]).analyze("Order 1234 shipped.")
+    findings = AnalyzerEngine([Digits(), Weak()]).analyze("Order 1234 shipped.")
     assert {f.entity_type for f in findings} == {"DIGITS", "WEAK"}
 
 
 def test_resolve_keeps_the_stronger_of_two_overlapping_claims():
-    findings = Analyzer([Digits(), Weak()]).analyze("Invoice 1234 shipped.")
+    findings = AnalyzerEngine([Digits(), Weak()]).analyze("Invoice 1234 shipped.")
     assert [f.entity_type for f in resolve(findings)] == ["DIGITS"]
 
 
@@ -91,7 +90,7 @@ def test_touching_spans_do_not_count_as_overlapping():
 
 def test_anonymize_replaces_every_span_from_the_right():
     text = "Order 1234 then 5678."
-    assert anonymize(text, Analyzer([Digits()]).analyze(text)).text == (
+    assert anonymize(text, AnalyzerEngine([Digits()]).analyze(text)).text == (
         "Order <DIGITS_0> then <DIGITS_1>."
     )
 
@@ -104,14 +103,14 @@ def test_anonymize_leaves_a_text_with_no_findings_alone():
 
 def test_a_repeated_value_earns_one_label():
     text = "Order 1234, again 1234."
-    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     assert result.text == "Order <DIGITS_0>, again <DIGITS_0>."
     assert [r.original for r in result.replacements] == ["1234"]
 
 
 def test_a_replacement_carries_the_value_it_stands_for():
     text = "Order 1234 then 5678."
-    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     assert [(r.entity_type, r.label, r.original) for r in result.replacements] == [
         ("DIGITS", "<DIGITS_0>", "1234"),
         ("DIGITS", "<DIGITS_1>", "5678"),
@@ -120,20 +119,20 @@ def test_a_replacement_carries_the_value_it_stands_for():
 
 def test_an_anonymized_result_reads_as_its_masked_text():
     text = "Order 1234."
-    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     assert str(result) == "Order <DIGITS_0>."
 
 
 def test_rehydrate_undoes_anonymize():
     text = "Order 1234 then 5678."
-    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     assert rehydrate(result.text, result.replacements) == text
 
 
 def test_rehydrate_restores_a_text_the_masking_never_saw():
     """This is the point of it: an answer written about the masked text."""
     text = "Order 1234 then 5678."
-    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     assert rehydrate("<DIGITS_1> shipped before <DIGITS_0>.", result.replacements) == (
         "5678 shipped before 1234."
     )
@@ -141,13 +140,13 @@ def test_rehydrate_restores_a_text_the_masking_never_saw():
 
 def test_rehydrate_leaves_a_label_the_text_never_mentions():
     text = "Order 1234 then 5678."
-    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     assert rehydrate("Only <DIGITS_0>.", result.replacements) == "Only 1234."
 
 
 def test_rehydrate_tells_the_tenth_label_from_the_first():
     text = " ".join(str(1000 + n) for n in range(11))
-    result = anonymize(text, Analyzer([Digits()]).analyze(text))
+    result = anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     assert rehydrate(result.text, result.replacements) == text
 
 
@@ -156,7 +155,7 @@ def test_a_pattern_can_throw_its_own_match_out():
         def invalidate_result(self, matched_text):
             return matched_text.startswith("0")
 
-    analyzer = Analyzer([Picky()])
+    analyzer = AnalyzerEngine([Picky()])
     assert analyzer.analyze("Order 0123") == []
     assert analyzer.analyze("Order 1234") != []
 
@@ -169,12 +168,12 @@ def test_the_strongest_pattern_wins_a_span_it_shares():
             Pattern("strong", r"\b\d{4}\b", 0.7),
         ]
 
-    (finding,) = Analyzer([Twice()]).analyze("Order 1234")
+    (finding,) = AnalyzerEngine([Twice()]).analyze("Order 1234")
     assert finding.score == pytest.approx(0.7)
 
 
 def test_score_threshold_drops_what_no_context_vouched_for():
-    analyzer = malaysian_analyzer()
+    analyzer = AnalyzerEngine()
     text = "Build v20250101 shipped."
     assert analyzer.analyze(text)
     assert analyzer.analyze(text, score_threshold=MIN_SCORE_WITH_CONTEXT) == []
@@ -182,7 +181,7 @@ def test_score_threshold_drops_what_no_context_vouched_for():
 
 def test_score_threshold_is_applied_after_context_is_weighed():
     """A weak match a context word rescued has to survive the threshold."""
-    analyzer = malaysian_analyzer()
+    analyzer = AnalyzerEngine()
     findings = analyzer.analyze(
         "Her travel document is Z12345678.", score_threshold=MIN_SCORE_WITH_CONTEXT
     )
@@ -190,10 +189,10 @@ def test_score_threshold_is_applied_after_context_is_weighed():
 
 
 def test_threshold_set_on_the_analyzer_applies_to_every_call():
-    analyzer = malaysian_analyzer(score_threshold=MIN_SCORE_WITH_CONTEXT)
+    analyzer = AnalyzerEngine(score_threshold=MIN_SCORE_WITH_CONTEXT)
     assert analyzer.analyze("Build v20250101 shipped.") == []
 
 
 def test_the_call_overrides_the_analyzers_threshold():
-    analyzer = malaysian_analyzer(score_threshold=MIN_SCORE_WITH_CONTEXT)
+    analyzer = AnalyzerEngine(score_threshold=MIN_SCORE_WITH_CONTEXT)
     assert analyzer.analyze("Build v20250101 shipped.", score_threshold=0.0)
