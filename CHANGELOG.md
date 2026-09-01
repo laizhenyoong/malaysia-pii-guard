@@ -9,6 +9,8 @@
   restored, and masked values no longer read as `<MY_NRIC_0>`.
 - **Breaking.** `Analyzer` is `AnalyzerEngine`, and it loads every recognizer
   itself, so `malaysian_analyzer` is gone.
+- An engine takes any secret of 16 bytes or more as its key and stretches it
+  with HKDF, so a key can come from the environment, a vault, or a KMS.
 - Added a `cryptography` dependency for the encryption.
 - Moved the package under `src/`, so the tests read an installed package rather
   than the working tree.

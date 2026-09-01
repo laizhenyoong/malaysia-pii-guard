@@ -4,6 +4,7 @@ from cryptography.fernet import InvalidToken
 
 from malaysia_pii_guard import (
     AnalyzerEngine,
+    AnonymizerEngine,
     DeanonymizeEngine,
     Finding,
     Pattern,
@@ -153,6 +154,29 @@ def test_another_key_cannot_undo_the_masking(anonymizer):
     result = anonymizer.anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
     with pytest.raises(InvalidToken):
         DeanonymizeEngine(generate_key()).deanonymize(result.text, result.items)
+
+
+def test_any_secret_the_caller_already_has_serves_as_a_key():
+    key = "the-secret-out-of-your-vault"
+    text = "Order 1234."
+    result = AnonymizerEngine(key).anonymize(text, AnalyzerEngine([Digits()]).analyze(text))
+    assert DeanonymizeEngine(key).deanonymize(result.text, result.items) == text
+
+
+def test_the_same_secret_derives_the_same_key_from_bytes_or_str():
+    text = "Order 1234."
+    result = AnonymizerEngine("a-secret-long-enough-to-pass").anonymize(
+        text, AnalyzerEngine([Digits()]).analyze(text)
+    )
+    undone = DeanonymizeEngine(b"a-secret-long-enough-to-pass").deanonymize(
+        result.text, result.items
+    )
+    assert undone == text
+
+
+def test_a_secret_too_short_to_be_a_key_is_refused():
+    with pytest.raises(ValueError, match="at least 16 bytes"):
+        AnonymizerEngine("too-short")
 
 
 def test_a_pattern_can_throw_its_own_match_out():

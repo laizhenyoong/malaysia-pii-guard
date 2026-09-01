@@ -5,17 +5,43 @@ only the key reverses it. The price is that deanonymize reads by offset: it
 undoes the text anonymize returned, not one that was rewritten in between.
 """
 
+import secrets
+from base64 import urlsafe_b64encode
 from dataclasses import dataclass
-from typing import Iterable, List
+from typing import Iterable, List, Union
 
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 from malaysia_pii_guard.recognizer import Finding
 
+# 128 bits, which is the shortest key AES has and the shortest presidio takes.
+MIN_KEY_BYTES = 16
 
-def generate_key() -> bytes:
-    """A fresh key for an AnonymizerEngine and the DeanonymizeEngine undoing it."""
-    return Fernet.generate_key()
+_KEY_INFO = b"malaysia-pii-guard fernet key"
+
+
+def generate_key() -> str:
+    """A fresh secret for an engine, for callers who have none of their own."""
+    return secrets.token_urlsafe(32)
+
+
+def _cipher(key: Union[bytes, str]) -> Fernet:
+    """A cipher from whatever secret the caller already has.
+
+    Fernet wants 32 url-safe base64 bytes, which no secret store hands you, so
+    the key material is stretched to that shape instead of being demanded in it.
+    The same material always derives the same cipher, which is what lets a
+    DeanonymizeEngine undo what an AnonymizerEngine did.
+    """
+    material = key.encode() if isinstance(key, str) else key
+    if len(material) < MIN_KEY_BYTES:
+        raise ValueError(f"key must be at least {MIN_KEY_BYTES} bytes")
+    derived = HKDF(
+        algorithm=hashes.SHA256(), length=32, salt=None, info=_KEY_INFO
+    ).derive(material)
+    return Fernet(urlsafe_b64encode(derived))
 
 
 def resolve(findings: Iterable[Finding]) -> List[Finding]:
@@ -51,8 +77,8 @@ class Anonymized:
 class AnonymizerEngine:
     """Replaces every span a finding claims with its ciphertext."""
 
-    def __init__(self, key: bytes):
-        self._cipher = Fernet(key)
+    def __init__(self, key: Union[bytes, str]):
+        self._fernet = _cipher(key)
 
     def anonymize(self, text: str, findings: Iterable[Finding]) -> Anonymized:
         """Encrypt every span that survives the overlap check.
@@ -66,7 +92,7 @@ class AnonymizerEngine:
         written = 0
         for finding in resolve(findings):
             head = text[read : finding.start]
-            token = self._cipher.encrypt(
+            token = self._fernet.encrypt(
                 text[finding.start : finding.end].encode()
             ).decode()
             parts += [head, token]
@@ -81,8 +107,8 @@ class AnonymizerEngine:
 class DeanonymizeEngine:
     """Puts the originals back by decrypting what anonymize left in the text."""
 
-    def __init__(self, key: bytes):
-        self._cipher = Fernet(key)
+    def __init__(self, key: Union[bytes, str]):
+        self._fernet = _cipher(key)
 
     def deanonymize(self, text: str, items: Iterable[Item]) -> str:
         """Decrypt every item back into place.
@@ -92,7 +118,7 @@ class DeanonymizeEngine:
         """
         # Splice right to left, so a replacement cannot move the spans before it.
         for item in sorted(items, key=lambda item: item.start, reverse=True):
-            original = self._cipher.decrypt(
+            original = self._fernet.decrypt(
                 text[item.start : item.end].encode()
             ).decode()
             text = f"{text[: item.start]}{original}{text[item.end :]}"

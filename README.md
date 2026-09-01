@@ -13,14 +13,11 @@ python -m pip install .
 ## Usage
 
 ```python
-from malaysia_pii_guard import (
-    AnalyzerEngine,
-    AnonymizerEngine,
-    DeanonymizeEngine,
-    generate_key,
-)
+import os
 
-key = generate_key()
+from malaysia_pii_guard import AnalyzerEngine, AnonymizerEngine, DeanonymizeEngine
+
+key = os.environ["PII_KEY"]
 text = "IC 880101-14-5523, mobile 012-345 6789"
 
 analyzer = AnalyzerEngine(score_threshold=0.4)
@@ -32,6 +29,10 @@ print(result.text)
 print(DeanonymizeEngine(key).deanonymize(result.text, result.items))
 # IC 880101-14-5523, mobile 012-345 6789
 ```
+
+Any secret of 16 bytes or more works as a key, so it can come straight from the
+environment, a vault, or a KMS. `generate_key()` makes a strong one for callers
+who have none.
 
 ## Flow
 
